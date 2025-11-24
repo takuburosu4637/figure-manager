@@ -763,7 +763,6 @@
             viewTitle, 
             showEditAndDelete = true
         ) => {
-        // ... (省略: renderReservationList ロジックは変更なし)
             listTargetEl.innerHTML = '';
             
             if (reservationsToRender.length === 0) {
@@ -861,13 +860,18 @@
                                 <h3 class="text-xl font-bold text-gray-900 dark:text-white truncate">${reservation.name}</h3>
                                 ${actionButtons}
                             </div>
-                            <div class="text-sm grid grid-cols-2 gap-x-4 gap-y-1 text-gray-600 dark:text-gray-300">
-                                <p class="font-medium flex items-center col-span-2">
+                            <div class="text-sm grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-gray-600 dark:text-gray-300">
+                                
+                                <p class="font-medium flex items-center">
                                     <i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-indigo-500"></i> 
                                     ${viewTitle === '予約' ? '発売予定' : '受取日'}: 
                                     <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.releaseDate || 'N/A'}</span>
-                                    <span class="ml-4 px-3 py-0.5 text-xs font-bold rounded-full border ${statusColorClass} shadow-sm">${reservation.status}</span>
                                 </p>
+                                <p class="flex items-center">
+                                    <i data-lucide="tag" class="w-4 h-4 mr-2 text-indigo-500"></i>
+                                    <span class="px-3 py-0.5 text-xs font-bold rounded-full border ${statusColorClass} shadow-sm">${reservation.status}</span>
+                                </p>
+
                                 <p class="flex items-center font-bold text-base text-fuchsia-700 dark:text-fuchsia-400">
                                     <i data-lucide="circle-yen" class="w-4 h-4 mr-2 text-fuchsia-700 dark:text-fuchsia-400"></i> 
                                     価格: ${reservation.price ? reservation.price.toLocaleString() : 0} 円
@@ -884,10 +888,11 @@
                                     <i data-lucide="calendar" class="w-4 h-4 mr-2 text-gray-500"></i> 
                                     予約日: ${reservation.reservationDate || 'N/A'}
                                 </p>
-                                <p class="flex items-center col-span-2">
+                                <p class="flex items-center">
                                     <i data-lucide="store" class="w-4 h-4 mr-2 text-gray-500"></i> 
                                     店舗: ${reservation.shop || 'N/A'}
                                 </p>
+                                <p></p>
                             </div>
                         </div>
                     `;
