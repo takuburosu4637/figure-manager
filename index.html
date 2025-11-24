@@ -860,7 +860,7 @@
                                 <h3 class="text-xl font-bold text-gray-900 dark:text-white truncate">${reservation.name}</h3>
                                 ${actionButtons}
                             </div>
-                            <div class="text-sm grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-gray-600 dark:text-gray-300">
+                            <div class="text-sm grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 text-gray-600 dark:text-gray-300">
                                 
                                 <p class="font-medium flex items-center">
                                     <i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-indigo-500"></i> 
@@ -892,7 +892,10 @@
                                     <i data-lucide="store" class="w-4 h-4 mr-2 text-gray-500"></i> 
                                     店舗: ${reservation.shop || 'N/A'}
                                 </p>
-                                <p></p>
+                                <p class="flex items-center">
+                                    <i data-lucide="book-open" class="w-4 h-4 mr-2 text-gray-500"></i> 
+                                    備考: ${reservation.notes || 'N/A'}
+                                </p>
                             </div>
                         </div>
                     `;
