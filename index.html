@@ -17,7 +17,17 @@
             background: linear-gradient(135deg, #e0f7fa 0%, #f9f0ff 100%);
             color: #1f2937; /* デフォルトのテキスト色 */
             transition: background-color 0.3s, color 0.3s;
+            /* 🔽 修正: デフォルトのフォントサイズを小さくする（スマホサイズが主） */
+            font-size: 0.95rem;
         }
+        
+        /* 🔽 修正: タブレット以上で標準サイズに戻す */
+        @media (min-width: 768px) {
+            body {
+                font-size: 1rem;
+            }
+        }
+        
         .bg-white { background-color: white !important; }
         .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; }
 
@@ -124,7 +134,7 @@
 
     <div id="app" class="max-w-7xl mx-auto">
         <div class="flex justify-between items-start mb-8">
-            <h1 class="text-4xl font-extrabold text-gray-900 flex items-center">
+            <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 flex items-center">
                 <i data-lucide="sparkles" class="w-8 h-8 mr-3 text-fuchsia-600"></i>
                 フィギュアコレクション管理
             </h1>
@@ -190,7 +200,7 @@
                     
                     <div class="md:col-span-9">
                         <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl border border-gray-100">
-                            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
+                            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
                                 <i data-lucide="list-checks" class="w-5 h-5 mr-2 text-indigo-500"></i>
                                 予約リスト
                             </h2>
@@ -240,7 +250,7 @@
                     
                     <div class="md:col-span-9">
                         <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl border border-gray-100">
-                            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
+                            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
                                 <i data-lucide="archive" class="w-5 h-5 mr-2 text-indigo-500"></i>
                                 所持フィギュアリスト
                             </h2>
