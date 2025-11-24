@@ -15,7 +15,8 @@
             font-family: 'Inter', sans-serif;
             /* 背景色とグラデーションの変更 */
             background: linear-gradient(135deg, #e0f7fa 0%, #f9f0ff 100%);
-            color: #1f2937; /* デフォルトのテキスト色 */
+            /* 🔽 修正: デフォルトのテキスト色を濃い色 (#1f2937) に戻し、各要素でコントラストを再調整 */
+            color: #1f2937;
             transition: background-color 0.3s, color 0.3s;
             /* 🔽 修正: デフォルトのフォントサイズを小さくする（スマホサイズが主） */
             font-size: 0.95rem;
@@ -28,13 +29,52 @@
             }
         }
         
-        .bg-white { background-color: white !important; }
+        /* 🔽 修正: カードやコンテナの背景色を明示的に白（または非常に明るい色）に設定 */
+        .bg-white { background-color: #ffffff !important; }
+        /* 🔽 削除: グループサマリーリストアイテムのカスタム背景色 (fuchsia-100) を削除 */
+        
         .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; }
 
+        /* スクロールバーのカスタム (ライトモード) */
+        .reservation-list::-webkit-scrollbar-thumb {
+            background-color: #a78bfa; /* 紫系のサムネイル */
+            border-radius: 10px;
+        }
+        .reservation-list::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        /* 🔽 修正: input/select のライトモードでのテキスト色を明確に黒系統に設定 (背景色指定を削除) */
+        input:not(.dark *), select:not(.dark *) {
+             color: #1f2937; /* 濃い文字色を維持 */
+             /* 背景色はHTMLのbg-whiteクラスまたはブラウザのデフォルトに任せる */
+        }
+
+        /* 🔽 1. 統計情報カードの数字を黒に固定 */
+        /* カードの数字 (text-2xl font-bold text-gray-900) に当たる要素のライトモード時の色を黒に固定 */
+        .bg-white p.text-2xl.font-bold.text-gray-900 {
+            color: #1f2937 !important;
+        }
+
+        /* 🔽 2. 予約リスト内の情報（名前以外）を濃いグレーに固定 */
+        /* text-gray-600 の色を濃いグレーに (text-gray-700相当) */
+        .bg-white .text-gray-600 {
+            color: #374151 !important; /* 濃いグレー */
+        }
+        /* 🔽 予約リスト内の情報（spanタグで強調されている部分）を黒に固定 */
+        .bg-white .text-gray-900 {
+            color: #1f2937 !important; /* 黒に近い色 */
+        }
+        
         /* === ダークモードのスタイル === */
         .dark body {
             background: #1f2937; /* 暗い背景 */
             color: #f3f4f6; /* 明るいテキスト */
+        }
+        
+        /* 🌟 追加: サイドバーが開いているときに本文のスクロールを禁止 */
+        body.overflow-hidden {
+            overflow: hidden;
         }
 
         /* 🔽 ここがダークモード時のカードやコンテナの背景色です (濃いグレー) */
@@ -74,6 +114,8 @@
         .dark .text-gray-700 { color: #e5e7eb !important; } /* 白系統の文字 (OK) */
         .dark .text-gray-600 { color: #d1d5db !important; } /* 白系統の文字 (OK) */
         .dark .text-gray-500 { color: #9ca3af !important; } /* 白系統の文字 (OK) */
+        .dark p.text-2xl.font-bold.text-gray-900 { color: #f3f4f6 !important; } /* 統計情報カードの数字 */
+
 
         /* スクロールバーのカスタム (ダークモード) */
         .dark .reservation-list::-webkit-scrollbar-thumb {
@@ -130,8 +172,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen p-2 md:p-8">
-
+<body>
     <div id="app" class="max-w-7xl mx-auto">
         <div class="flex justify-between items-start mb-8">
             <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 flex items-center">
@@ -175,6 +216,9 @@
                         新しい予約を追加
                     </button>
                     <div class="flex items-center space-x-3">
+                        <button id="open-summary-btn-reservations" class="md:hidden p-3 bg-fuchsia-600 text-white rounded-full shadow-lg hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105" aria-label="グループサマリーを開く">
+                            <i data-lucide="menu" class="w-6 h-6"></i>
+                        </button>
                         <label for="group-by-select" class="text-gray-700 font-medium whitespace-nowrap">表示をグループ化:</label>
                         <select id="group-by-select" class="p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none bg-white">
                             <option value="none">グループ化しない</option>
@@ -188,7 +232,10 @@
 
                 <div id="main-content-wrapper-reservations" class="grid grid-cols-1 md:grid-cols-12 gap-6">
 
-                    <div id="group-summary-sidebar" class="md:col-span-3 bg-white p-6 rounded-3xl shadow-2xl border border-gray-100 md:h-fit md:sticky md:top-4">
+                    <div id="group-summary-sidebar" class="fixed inset-y-0 left-0 w-80 bg-white z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 md:col-span-3 md:h-fit md:sticky md:top-4 md:p-6 md:rounded-3xl md:shadow-2xl md:border md:border-gray-100 p-6 rounded-r-3xl shadow-2xl border-r border-t border-b border-gray-200 overflow-y-auto">
+                        <button id="close-summary-btn-reservations" class="md:hidden absolute top-4 right-4 text-gray-500 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition z-50">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
                         <h2 id="summary-title-reservations" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center">
                             <i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>
                             グループサマリー
@@ -221,11 +268,16 @@
                         </div>
                     </div>
                 </div>
+                <div id="sidebar-overlay-reservations" class="hidden md:hidden fixed inset-0 bg-gray-900 bg-opacity-70 z-40 transition-opacity duration-300"></div>
             </div>
             
             <div id="page-owned" class="tab-page hidden">
                 <div class="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
-                    <div class="flex-grow"></div> <div class="flex items-center space-x-3">
+                    <div class="flex-grow"></div> 
+                    <div class="flex items-center space-x-3">
+                        <button id="open-summary-btn-owned" class="md:hidden p-3 bg-fuchsia-600 text-white rounded-full shadow-lg hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105" aria-label="グループサマリーを開く">
+                            <i data-lucide="menu" class="w-6 h-6"></i>
+                        </button>
                         <label for="group-by-select-owned" class="text-gray-700 font-medium whitespace-nowrap">表示をグループ化:</label>
                         <select id="group-by-select-owned" class="p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none bg-white">
                             <option value="none">グループ化しない</option>
@@ -238,7 +290,10 @@
                 </div>
                 <div id="main-content-wrapper-owned" class="grid grid-cols-1 md:grid-cols-12 gap-6">
 
-                    <div id="group-summary-sidebar-owned" class="md:col-span-3 bg-white p-6 rounded-3xl shadow-2xl border border-gray-100 md:h-fit md:sticky md:top-4">
+                    <div id="group-summary-sidebar-owned" class="fixed inset-y-0 left-0 w-80 bg-white z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 md:col-span-3 md:h-fit md:sticky md:top-4 md:p-6 md:rounded-3xl md:shadow-2xl md:border md:border-gray-100 p-6 rounded-r-3xl shadow-2xl border-r border-t border-b border-gray-200 overflow-y-auto">
+                        <button id="close-summary-btn-owned" class="md:hidden absolute top-4 right-4 text-gray-500 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition z-50">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
                         <h2 id="summary-title-owned" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center">
                             <i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>
                             所持フィギュア サマリー
@@ -271,6 +326,7 @@
                         </div>
                     </div>
                 </div>
+                <div id="sidebar-overlay-owned" class="hidden md:hidden fixed inset-0 bg-gray-900 bg-opacity-70 z-40 transition-opacity duration-300"></div>
             </div>
 
         </div>
@@ -440,6 +496,18 @@
         // 🔽 新規追加: サマリータイトル要素
         const summaryTitleReservationsEl = document.getElementById('summary-title-reservations');
         const summaryTitleOwnedEl = document.getElementById('summary-title-owned');
+        
+        // 🌟 新規追加: オフキャンバスメニュー関連のDOM要素
+        const groupSummarySidebarReservations = document.getElementById('group-summary-sidebar');
+        const openSummaryBtnReservations = document.getElementById('open-summary-btn-reservations');
+        const closeSummaryBtnReservations = document.getElementById('close-summary-btn-reservations');
+        const sidebarOverlayReservations = document.getElementById('sidebar-overlay-reservations');
+        
+        const groupSummarySidebarOwned = document.getElementById('group-summary-sidebar-owned');
+        const openSummaryBtnOwned = document.getElementById('open-summary-btn-owned');
+        const closeSummaryBtnOwned = document.getElementById('close-summary-btn-owned');
+        const sidebarOverlayOwned = document.getElementById('sidebar-overlay-owned');
+
 
         let currentView = 'reservations'; // 'reservations' or 'owned'
 
@@ -490,6 +558,19 @@
                 <i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>
                 ${newTitleText}
             `;
+            // 🌟 追加: クローズボタンを再追加するために、既存のHTMLのクローズボタンを移動させる
+            const closeBtn = view === 'reservations' ? closeSummaryBtnReservations : closeSummaryBtnOwned;
+            if (closeBtn && !closeBtn.classList.contains('md:hidden')) {
+                // デスクトップで表示されているクローズボタンが誤って追加されないようにする
+            } else {
+                 // モバイル用のクローズボタンを、デスクトップでタイトルが上書きした後に再度埋め込む
+                 if (titleEl.parentElement.querySelector('#close-summary-btn-reservations') || titleEl.parentElement.querySelector('#close-summary-btn-owned')) {
+                    // 既に存在する場合は無視
+                 } else {
+                    titleEl.parentElement.prepend(closeBtn);
+                 }
+            }
+            
             lucide.createIcons(); // アイコンが再描画されるように
         };
         
@@ -607,7 +688,7 @@
         };
 
         /**
-         * 🌟 汎用的なグループサマリー描画関数 (変更: グループヘッダーのクリックイベントを調整)
+         * 🌟 汎用的なグループサマリー描画関数 (変更: グループヘッダーのクラスとinnerHTMLを修正)
          */
         const renderGroupSummary = (
             reservationsToRender, 
@@ -684,16 +765,16 @@
                 
                 // グループヘッダー
                 const header = document.createElement('div');
-                // 🌟 初期状態は閉じるので、角丸をすべて付ける 'rounded-xl'
-                header.className = 'p-3 bg-fuchsia-100 dark:bg-fuchsia-800 rounded-xl font-bold text-gray-800 dark:text-white flex justify-between items-center cursor-pointer hover:bg-fuchsia-200 dark:hover:bg-fuchsia-700 transition duration-150';
+                // 🌟 修正: 背景色を bg-fuchsia-600 に変更し、テキスト色とホバー色、件数色を調整
+                header.className = 'p-3 bg-fuchsia-600 dark:bg-fuchsia-800 rounded-xl font-bold text-white dark:text-white flex justify-between items-center cursor-pointer hover:bg-fuchsia-700 dark:hover:bg-fuchsia-700 transition duration-150';
                 
                 // 🌟 ヘッダーに件数とトグル用のシェブロンアイコンを追加
                 header.innerHTML = `
                     <div class="flex items-center justify-between w-full">
                         <span>${displayKey}</span>
                         <div class="flex items-center">
-                            <span class="text-fuchsia-700 font-extrabold flex-shrink-0 mr-2 dark:text-fuchsia-300">${count} 件</span>
-                            <i data-lucide="chevron-down" class="w-4 h-4 transition duration-200 transform summary-chevron"></i>
+                            <span class="text-white font-extrabold flex-shrink-0 mr-2 dark:text-fuchsia-300">${count} 件</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 transition duration-200 transform summary-chevron text-white"></i>
                         </div>
                     </div>
                 `;
@@ -702,6 +783,7 @@
                 // 🌟 グループ内のアイテムリスト (初期は非表示)
                 const figureList = document.createElement('div');
                 // 🔽 初期状態では hidden クラスを付与して非表示にする
+                // 🔽 修正: ライトモードでの背景色を白 (#ffffff) に変更してコントラストを確保
                 figureList.className = 'p-2 space-y-1 bg-white dark:bg-gray-700 rounded-b-xl hidden summary-content';
                 
                 reservationsInGroup.forEach(r => {
@@ -715,10 +797,16 @@
                                 targetEl.classList.remove('animate-pulse-once');
                             }, 2000);
                         }
+                        
+                        // 🌟 追加: モバイル画面でのみサイドバーを閉じる
+                        if (window.innerWidth < 768) {
+                            closeSidebar(viewTitle === '予約' ? 'reservations' : 'owned');
+                        }
                     };
                     
                     const figureItem = document.createElement('p');
-                    figureItem.className = 'text-xs text-gray-600 dark:text-gray-300 truncate px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-600 rounded cursor-pointer';
+                    // 🔽 修正: ライトモードでのテキスト色を濃い色 (text-gray-900) に変更
+                    figureItem.className = 'text-xs text-gray-900 dark:text-gray-300 truncate px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-600 rounded cursor-pointer';
                     figureItem.textContent = r.name + (r.scale && r.scale.trim() !== '' ? ` (${r.scale})` : '');
                     // 🌟 個別フィギュア項目をクリックすると該当カードにスクロール
                     figureItem.onclick = scrollHandler;
@@ -835,6 +923,7 @@
                     const statusColorClass = STATUS_COLORS[reservation.status] || 'bg-gray-100 text-gray-800 border-gray-300';
 
                     const card = document.createElement('div');
+                    // 🔽 修正: ライトモードでの背景色を白 (#ffffff) に変更してコントラストを確保。
                     const cardClass = `p-4 border border-gray-200 rounded-xl shadow-md bg-white transition duration-200 flex space-x-4 items-center ${viewTitle === '予約' && isCompleted ? 'opacity-70 bg-gray-50 dark:bg-gray-700' : 'hover:shadow-lg hover:border-fuchsia-300 dark:bg-gray-800 dark:border-gray-700 dark:hover:border-fuchsia-500'}`;
                     card.className = cardClass;
                     // 🌟 個別フィギュアカードのIDを付与
@@ -878,23 +967,23 @@
                                 </p>
                                 <p class="flex items-center">
                                     <i data-lucide="ruler" class="w-4 h-4 mr-2 text-gray-500"></i> 
-                                    スケール：${reservation.scale || 'N/A'}
+                                    スケール：<span class="text-gray-900 dark:text-white ml-1">${reservation.scale || 'N/A'}</span>
                                 </p>
                                 <p class="flex items-center">
                                     <i data-lucide="factory" class="w-4 h-4 mr-2 text-gray-500"></i> 
-                                    メーカー: ${reservation.manufacturer || 'N/A'}
+                                    メーカー: <span class="text-gray-900 dark:text-white ml-1">${reservation.manufacturer || 'N/A'}</span>
                                 </p>
                                 <p class="flex items-center">
                                     <i data-lucide="calendar" class="w-4 h-4 mr-2 text-gray-500"></i> 
-                                    予約日: ${reservation.reservationDate || 'N/A'}
+                                    予約日: <span class="text-gray-900 dark:text-white ml-1">${reservation.reservationDate || 'N/A'}</span>
                                 </p>
                                 <p class="flex items-center">
                                     <i data-lucide="store" class="w-4 h-4 mr-2 text-gray-500"></i> 
-                                    店舗: ${reservation.shop || 'N/A'}
+                                    店舗: <span class="text-gray-900 dark:text-white ml-1">${reservation.shop || 'N/A'}</span>
                                 </p>
                                 <p class="flex items-center">
                                     <i data-lucide="book-open" class="w-4 h-4 mr-2 text-gray-500"></i> 
-                                    備考: ${reservation.notes || 'N/A'}
+                                    備考: <span class="text-gray-900 dark:text-white ml-1">${reservation.notes || 'N/A'}</span>
                                 </p>
                             </div>
                         </div>
@@ -969,6 +1058,32 @@
             // 6. 現在のアクティブタブの内容を表示/非表示に (onSnapshot後に呼ばれるため)
             switchTab(currentView, false);
         };
+
+        // 🌟 新規追加: サイドバーの表示/非表示を切り替える関数
+        const toggleSidebar = (view, isOpen) => {
+            const sidebar = view === 'reservations' ? groupSummarySidebarReservations : groupSummarySidebarOwned;
+            const overlay = view === 'reservations' ? sidebarOverlayReservations : sidebarOverlayOwned;
+            
+            if (!sidebar || !overlay) return;
+
+            if (isOpen) {
+                // Open
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                overlay.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden'); // Prevent scrolling body when menu is open
+            } else {
+                // Close
+                sidebar.classList.remove('translate-x-0');
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+        };
+
+        const openSidebar = (view) => toggleSidebar(view, true);
+        const closeSidebar = (view) => toggleSidebar(view, false);
+
 
         // Firestoreのリアルタイムリスナー設定 (renderAllViewsを呼ぶように変更)
         const setupFirestoreListener = () => {
@@ -1142,6 +1257,10 @@
          */
         const switchTab = (view, updateHistory = true) => {
             currentView = view;
+            
+            // 🌟 追加: タブ切り替え時に、開いている可能性のあるサイドバーを閉じる
+            closeSidebar('reservations');
+            closeSidebar('owned');
 
             // 1. Tab Styling
             const activeClass = 'border-fuchsia-500 text-fuchsia-600 dark:text-fuchsia-400';
@@ -1291,6 +1410,18 @@
                     }
                 };
             }
+            
+            // 🌟 追加: オフキャンバスメニューのイベントリスナー
+            // 予約ビュー
+            openSummaryBtnReservations.onclick = () => openSidebar('reservations');
+            closeSummaryBtnReservations.onclick = () => closeSidebar('reservations');
+            sidebarOverlayReservations.onclick = () => closeSidebar('reservations');
+
+            // 所持ビュー
+            openSummaryBtnOwned.onclick = () => openSidebar('owned');
+            closeSummaryBtnOwned.onclick = () => closeSidebar('owned');
+            sidebarOverlayOwned.onclick = () => closeSidebar('owned');
+
         });
     </script>
 </body>
