@@ -86,7 +86,6 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important; 
         }
         
-        /* 🔽 サマリーのグループヘッダーの色をfuchsia-600に統一 (JSで直接クラスを上書きするため、ここでは不要だが念のため残す) */
         /* 🔽 修正: メインリストのグループヘッダーをfuchsia-600/text-whiteに修正 */
         .group-header {
             background-color: #ec4899; /* fuchsia-600 */
@@ -102,11 +101,6 @@
             color: #f3f4f6;
         }
         
-        /* 🔽 以前の上書きを削除し、JS側のクラス修正に任せる */
-        .dark .text-fuchsia-700 { color: #f0abfc !important; } 
-        .dark .border-fuchsia-400 { border-color: #a78bfa !important; }
-
-
         /* 🔽 ここでテキスト色を白色系統に上書きしています */
         .dark input, .dark select {
             background-color: #4b5563; /* 濃いグレー */
@@ -166,7 +160,7 @@
             animation: pulse-once 2s ease-out;
         }
 
-        /* 🔽 修正箇所: 右下固定のメニューボタンのスタイル */
+        /* 🔽 右下固定のメニューボタンのスタイル */
         .fixed-menu-container { /* 名前を修正: fixed-menu-button -> fixed-menu-container */
             position: fixed;
             bottom: 20px; /* 下からの距離 */
@@ -177,7 +171,7 @@
             gap: 15px; /* ボタン間のスペース */
             align-items: flex-end; /* 右揃え */
         }
-        /* 🔽 修正箇所: 新しい予約追加ボタンのスタイル */
+        /* 🔽 新しい予約追加ボタンのスタイル */
         .fixed-add-button {
             /* サイズを少し大きくして目立たせる (Tailwindのp-4とw-14 h-14相当) */
             width: 56px;
@@ -188,7 +182,7 @@
             align-items: center;
             justify-content: center;
         }
-        /* 🔽 修正箇所: グループサマリーボタンのクラスを維持しつつ調整 */
+        /* 🔽 グループサマリーボタンのクラスを維持しつつ調整 */
         .fixed-summary-button {
             /* サイズを少し小さくして区別する (Tailwindのp-3とw-12 h-12相当) */
             width: 48px;
@@ -206,6 +200,22 @@
                 display: none;
             }
         }
+        
+        /* 🔽 修正箇所: モーダルコンテナが画面全体をスクロールできるようにする */
+        .scrollable-modal-container {
+            /* fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 p-4 */
+            overflow-y: auto; /* 👈 モーダル自体がスクロール可能になる */
+        }
+        
+        /* 🔽 修正箇所: モーダル内のコンテンツを画面中央に配置しつつ高さを制限する */
+        .modal-content-wrapper {
+            /* bg-white w-full max-w-xl rounded-2xl shadow-2xl p-8 relative transform transition-all duration-300 */
+            max-height: calc(100vh - 40px); /* 画面の高さから上下20pxのマージンを引いた高さに制限 */
+            overflow-y: auto; /* 👈 モーダルの中身がスクロール可能になる */
+            margin-top: auto; /* Flexアイテムとして上下中央に配置するために必要 */
+            margin-bottom: auto;
+        }
+        
     </style>
 </head>
 <body>
@@ -385,8 +395,8 @@
         </button>
     </div>
     
-    <div id="reservation-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 hidden p-4">
-        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-8 relative transform transition-all duration-300">
+    <div id="reservation-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 hidden p-4 scrollable-modal-container">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-8 relative transform transition-all duration-300 modal-content-wrapper">
             <h2 id="modal-title" class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">新しい予約を追加</h2>
             
             <form id="reservation-form" class="space-y-5">
