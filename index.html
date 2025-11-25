@@ -601,18 +601,14 @@
         
         /**
          * 統計情報カードのHTMLを生成するヘルパー関数
+         * 🔽 修正: アイコンと colorClass の引数を削除
          */
-        const createStatCard = (title, value, iconName, colorClass) => {
+        const createStatCard = (title, value) => {
             return `
                 <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full ${colorClass} bg-opacity-10 mr-4">
-                            <i data-lucide="${iconName}" class="w-6 h-6 ${colorClass}"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">${title}</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">${value}</p>
-                        </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 text-left">${title}</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1 text-left">${value}</p>
                     </div>
                 </div>
             `;
@@ -666,11 +662,12 @@
                 });
 
                 const totalReservations = reservations.length;
+                // 🔽 修正: アイコンと colorClass の引数を削除
                 statsEl.innerHTML = `
-                    ${createStatCard('予約総件数 (全データ)', totalReservations, 'list-ordered', 'text-indigo-600')}
-                    ${createStatCard('未完了件数', pendingReservations, 'package-search', 'text-fuchsia-600')}
-                    ${createStatCard('支払い予定総額', formatCurrency(totalReserved), 'circle-yen', 'text-green-600')}
-                    ${createStatCard('今月・来月支払予定額', formatCurrency(upcomingPaymentTotal), 'calendar-check', 'text-amber-600')}
+                    ${createStatCard('予約総件数 (全データ)', totalReservations)}
+                    ${createStatCard('未完了件数', pendingReservations)}
+                    ${createStatCard('支払い予定総額', formatCurrency(totalReserved))}
+                    ${createStatCard('今月・来月支払予定額', formatCurrency(upcomingPaymentTotal))}
                 `;
 
             } else if (view === 'owned') {
@@ -692,14 +689,16 @@
                 const totalOwnedCount = ownedReservations.length;
 
                 // 所持ビュー用の統計カード
+                // 🔽 修正: アイコンと colorClass の引数を削除
                 statsEl.innerHTML = `
-                    ${createStatCard('所持総件数', totalOwnedCount, 'archive', 'text-indigo-600')}
-                    ${createStatCard('本年取得件数', thisYearOwnedCount, 'trending-up', 'text-fuchsia-600')}
-                    ${createStatCard('総購入額', formatCurrency(totalOwnedPrice), 'circle-yen', 'text-green-600')}
-                    ${createStatCard('平均単価', totalOwnedCount > 0 ? formatCurrency(Math.round(totalOwnedPrice / totalOwnedCount)) : formatCurrency(0), 'scale', 'text-amber-600')}
+                    ${createStatCard('所持総件数', totalOwnedCount)}
+                    ${createStatCard('本年取得件数', thisYearOwnedCount)}
+                    ${createStatCard('総購入額', formatCurrency(totalOwnedPrice))}
+                    ${createStatCard('平均単価', totalOwnedCount > 0 ? formatCurrency(Math.round(totalOwnedPrice / totalOwnedCount)) : formatCurrency(0))}
                 `;
             }
             
+            // 🔽 修正: アイコンがないため、この行は削除またはそのまま残しても影響なし
             lucide.createIcons();
         };
 
