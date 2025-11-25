@@ -102,8 +102,7 @@
             color: #f3f4f6;
         }
         
-        /* 🔽 ダークモード時のサイドバーのグループサマリーの背景色 (意図しない上書きを削除/修正) */
-        /* 以前の上書きを削除し、JS側のクラス修正に任せる */
+        /* 🔽 以前の上書きを削除し、JS側のクラス修正に任せる */
         .dark .text-fuchsia-700 { color: #f0abfc !important; } 
         .dark .border-fuchsia-400 { border-color: #a78bfa !important; }
 
@@ -546,14 +545,13 @@
         const INACTIVE_CLASSES = ['text-gray-500', 'hover:text-fuchsia-600', 'hover:bg-fuchsia-50', 'dark:text-gray-400', 'dark:hover:bg-gray-700', 'dark:hover:text-white'];
 
         
-        // 🔽 変更なし: グループ化キーと表示名のマッピング
+        // 🔽 修正: グループ化キーと表示名のマッピング (サマリータイトル用に追加)
         const GROUP_BY_NAMES = {
-            'none': '全て', // 「グループ」から「全アイテム」に変更
-            // 予約リスト側
-            'releaseDateMonth': '発売月', // ごととサマリーを削除
-            'manufacturer': 'メーカー', // ごととサマリーを削除
-            'shop': '購入店舗', // ごととサマリーを削除
-            'scale': 'スケール', // ごととサマリーを削除
+            'none': '全アイテム',
+            'releaseDateMonth': '発売月',
+            'manufacturer': 'メーカー',
+            'shop': '購入店舗',
+            'scale': 'スケール',
         };
 
         /**
@@ -562,6 +560,33 @@
         const getGroupByDisplayName = (groupBy) => {
             return GROUP_BY_NAMES[groupBy] || GROUP_BY_NAMES['none'];
         };
+        
+        /**
+         * 🌟 修正: グループサマリーのタイトルを更新する関数
+         */
+        const updateSummaryTitle = (view, groupBy) => {
+            const baseName = GROUP_BY_NAMES[groupBy] || 'グループ';
+            
+            let titleText;
+            if (groupBy === 'none') {
+                // グループ化しない場合は、HTMLで設定されたデフォルトタイトルを維持 (例: グループサマリー)
+                titleText = view === 'reservations' ? 'グループサマリー' : '所持フィギュア サマリー';
+            } else {
+                // ご要望に基づき、グループ名のみに変更
+                titleText = baseName;
+            }
+            
+            const titleEl = view === 'reservations' ? summaryTitleReservationsEl : summaryTitleOwnedEl;
+            
+            // アイコンを保持
+            const iconHtml = `<i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>`;
+            
+            if (titleEl) {
+                titleEl.innerHTML = iconHtml + titleText;
+                lucide.createIcons(); // アイコンの再描画
+            }
+        };
+
 
         /**
          * 価格を日本円の形式（¥1,234）にフォーマットする
@@ -1024,7 +1049,8 @@
         };
 
         /**
-         * 🌟 全てのビュー (予約、所持、サマリー) をレンダリングする
+         * 🌟 修正: 全てのビュー (予約、所持、サマリー) をレンダリングする
+         * メインリストのレンダリングを追加しました。
          */
         const renderAllViews = () => {
             // 1. フィルタリング
@@ -1036,27 +1062,28 @@
             
             // 3. 予約ビューのレンダリング
             const groupBy = groupBySelect.value;
-            // 🌟 タイトル更新 (削除)
-            // updateSummaryTitle('reservations', groupBy);
+            // 🌟 タイトル更新
+            updateSummaryTitle('reservations', groupBy);
             renderGroupSummary(
                 pendingReservations,
                 groupSummaryListEl,
                 groupBy,
                 '予約'
             );
+            // 🔽 修正: メイン予約リストの描画を追加
             renderReservationList(
                 pendingReservations,
                 reservationListEl,
                 noDataMessage,
                 groupBy,
                 '予約',
-                true
+                true 
             );
 
             // 4. 所持ビューのレンダリング
             const groupByOwned = groupBySelectOwned.value;
-            // 🌟 タイトル更新 (削除)
-            // updateSummaryTitle('owned', groupByOwned);
+            // 🌟 タイトル更新
+            updateSummaryTitle('owned', groupByOwned);
             renderGroupSummary(
                 ownedReservations,
                 groupSummaryListOwnedEl,
@@ -1064,14 +1091,14 @@
                 groupByOwned,
                 '所持'
             );
+             // 🔽 修正: メイン所持リストの描画を追加
             renderReservationList(
                 ownedReservations,
                 ownedListEl,
                 noOwnedDataMessage,
-                // 🔽 予約シートと同様に、groupByOwnedを使用するように修正
                 groupByOwned,
                 '所持',
-                true // 編集/削除ボタン表示 (主にステータス変更用)
+                true 
             );
 
             // 5. 読み込みインジケーターを非表示に
@@ -1293,6 +1320,10 @@
             if (updateHistory) {
                 history.pushState({ view: currentView }, '', `#${currentView}`);
             }
+            
+            // 🌟 修正: タブ切り替え時にもグループサマリーのタイトルを更新
+            const groupBySelectEl = view === 'reservations' ? groupBySelect : groupBySelectOwned;
+            updateSummaryTitle(view, groupBySelectEl.value);
         };
 
         /**
