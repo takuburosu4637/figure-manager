@@ -86,9 +86,19 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important; 
         }
         
-        /* ダークモード時のグループヘッダーの色 */
+        /* 🔽 サマリーのグループヘッダーの色をfuchsia-600に統一 (JSで直接クラスを上書きするため、ここでは不要だが念のため残す) */
+        /* 🔽 修正: メインリストのグループヘッダーをfuchsia-600/text-whiteに修正 */
+        .group-header {
+            background-color: #ec4899; /* fuchsia-600 */
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
         .dark .group-header {
-            background-color: #6d28d9; /* 濃いめの紫 */
+            background-color: #db2777; /* fuchsia-700 or fuchsia-600 on dark */
             color: #f3f4f6;
         }
         
@@ -145,17 +155,6 @@
             object-fit: cover;
             border-radius: 8px;
             flex-shrink: 0; /* 画像が縮まないように */
-        }
-        
-        /* グループ化セクションのカスタムスタイル */
-        .group-header {
-            background-color: #8b5cf6; /* 紫色 */
-            color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 700;
-            margin-top: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
         }
         
         /* カスタムアニメーション（スクロールターゲットのハイライト用） (🌟 追加) */
@@ -547,7 +546,7 @@
         const INACTIVE_CLASSES = ['text-gray-500', 'hover:text-fuchsia-600', 'hover:bg-fuchsia-50', 'dark:text-gray-400', 'dark:hover:bg-gray-700', 'dark:hover:text-white'];
 
         
-        // 🔽 変更: グループ化キーと表示名のマッピングから「ごと」と「サマリー」を削除
+        // 🔽 変更なし: グループ化キーと表示名のマッピング
         const GROUP_BY_NAMES = {
             'none': '全て', // 「グループ」から「全アイテム」に変更
             // 予約リスト側
@@ -562,17 +561,6 @@
          */
         const getGroupByDisplayName = (groupBy) => {
             return GROUP_BY_NAMES[groupBy] || GROUP_BY_NAMES['none'];
-        };
-
-        /**
-         * 🌟 サマリータイトルのテキストを更新する関数 (シンプル版)
-         */
-        const updateSummaryTitle = (view, groupBy) => {
-            const titleEl = view === 'reservations' ? summaryTitleReservationsEl : summaryTitleOwnedEl;
-            const viewName = view === 'reservations' ? '予約' : '所持フィギュア';
-            const groupByText = getGroupByDisplayName(groupBy);
-            titleEl.innerHTML = `<i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i> ${groupByText} ${viewName} サマリー`;
-            lucide.createIcons();
         };
 
         /**
@@ -755,7 +743,6 @@
                     displayKey = `${year}年${month}月 ${groupKey.split(' ')[1]}`;
                 }
                 
-                // 🔽 修正: 'none'の場合、タイトルから「(全...件)」を削除し、件数を末尾に移動
                 if (groupBy === 'none') {
                     // キーは「全未完了アイテム」または「全所持アイテム」
                     displayKey = groupKey;
@@ -763,12 +750,13 @@
 
                 // グループサマリーのコンテナ
                 const groupContainer = document.createElement('div');
-                // 🔽 修正なし: グループコンテナのクラス (ボーダーの色はfuchsia-400のまま維持)
-                groupContainer.className = 'group-summary-item border border-fuchsia-400 rounded-xl shadow-sm hover:shadow-md transition duration-200';
+                // 🔽 修正: ボーダーの色をfuchsia-600に
+                groupContainer.className = 'group-summary-item border border-fuchsia-600 dark:border-fuchsia-400 rounded-xl shadow-sm hover:shadow-md transition duration-200';
                 
                 // ヘッダー
                 const header = document.createElement('div');
-                header.className = 'p-3 bg-fuchsia-50 dark:bg-gray-700 font-bold text-fuchsia-700 dark:text-fuchsia-400 cursor-pointer flex justify-between items-center rounded-xl transition duration-150 hover:bg-fuchsia-100 dark:hover:bg-gray-600';
+                // 🔽 修正1: ダークモードでもbg-fuchsia-600/text-whiteになるようにクラスを修正
+                header.className = 'p-3 bg-fuchsia-600 font-bold text-white cursor-pointer flex justify-between items-center rounded-xl transition duration-150 hover:bg-fuchsia-700 dark:hover:bg-fuchsia-700';
                 header.innerHTML = `
                     <span class="text-sm md:text-md">${displayKey}</span>
                     <span class="text-sm font-semibold flex items-center">
@@ -781,7 +769,8 @@
 
                 // フィギュアリスト
                 const figureList = document.createElement('ul');
-                figureList.className = 'p-3 space-y-1 list-disc list-inside text-gray-700 dark:text-gray-300';
+                // 🔽 修正: リスト内の文字色をtext-gray-900（黒に近い色）に
+                figureList.className = 'p-3 space-y-1 list-disc list-inside text-gray-900 dark:text-gray-300';
                 
                 // 項目を追加
                 reservationsInGroup.forEach(r => {
@@ -951,26 +940,34 @@
                         <h3 class="text-xl font-bold text-gray-900 dark:text-white truncate">${reservation.name}</h3>
                         ${actionButtons}
                     </div>
-                    <div class="text-sm grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 text-gray-600 dark:text-gray-300">
-                        <p class="font-medium flex items-center">
+                    <div class="text-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 text-gray-600 dark:text-gray-300">
+                        <p class="font-medium flex items-center sm:col-span-1">
                             <i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-indigo-500"></i>
                             ${viewTitle === '予約' ? '発売予定' : '受取日'}: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.releaseDate || 'N/A'}</span>
-                        </p>
-                        <p class="flex items-center">
-                            <i data-lucide="tag" class="w-4 h-4 mr-2 text-green-500"></i>
-                            価格: <span class="text-gray-900 dark:text-white font-semibold ml-1">${formatCurrency(reservation.price)}</span>
                         </p>
                         <p class="flex items-center sm:col-span-1">
                             <i data-lucide="factory" class="w-4 h-4 mr-2 text-amber-500"></i>
                             メーカー: <span class="text-gray-900 dark:text-white font-semibold ml-1 truncate">${reservation.manufacturer || 'N/A'}</span>
                         </p>
+                        <p class="flex items-center sm:col-span-1">
+                            <i data-lucide="tag" class="w-4 h-4 mr-2 text-green-500"></i>
+                            価格: <span class="text-gray-900 dark:text-white font-semibold ml-1">${formatCurrency(reservation.price)}</span>
+                        </p>
+                        ${reservation.scale ? `
+                        <p class="flex items-center sm:col-span-1">
+                            <i data-lucide="ruler" class="w-4 h-4 mr-2 text-purple-500"></i>
+                            スケール: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.scale}</span>
+                        </p>` : ''}
+                        ${reservation.shop ? `
+                        <p class="flex items-center sm:col-span-1">
+                            <i data-lucide="store" class="w-4 h-4 mr-2 text-pink-500"></i>
+                            店舗: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.shop}</span>
+                        </p>` : ''}
                     </div>
                     <div class="mt-3 flex flex-wrap gap-2 items-center">
                         <span class="px-3 py-1 text-xs font-semibold rounded-full border ${statusColorClass}">
                             ${reservation.status}
                         </span>
-                        ${reservation.scale ? `<span class="px-3 py-1 text-xs font-semibold rounded-full border border-gray-300 bg-gray-50 text-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600">${reservation.scale}</span>` : ''}
-                        ${reservation.shop ? `<span class="px-3 py-1 text-xs font-semibold rounded-full border border-gray-300 bg-gray-50 text-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"><i data-lucide="store" class="w-3 h-3 mr-1 inline-block"></i>${reservation.shop}</span>` : ''}
                     </div>
                 </div>
             `;
@@ -1039,8 +1036,8 @@
             
             // 3. 予約ビューのレンダリング
             const groupBy = groupBySelect.value;
-            // 🌟 タイトル更新
-            updateSummaryTitle('reservations', groupBy);
+            // 🌟 タイトル更新 (削除)
+            // updateSummaryTitle('reservations', groupBy);
             renderGroupSummary(
                 pendingReservations,
                 groupSummaryListEl,
@@ -1058,8 +1055,8 @@
 
             // 4. 所持ビューのレンダリング
             const groupByOwned = groupBySelectOwned.value;
-            // 🌟 タイトル更新
-            updateSummaryTitle('owned', groupByOwned);
+            // 🌟 タイトル更新 (削除)
+            // updateSummaryTitle('owned', groupByOwned);
             renderGroupSummary(
                 ownedReservations,
                 groupSummaryListOwnedEl,
