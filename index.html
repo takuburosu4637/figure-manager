@@ -192,11 +192,11 @@
                 <nav class="flex space-x-4" aria-label="Tabs">
                     <button id="tab-reservations" data-tab="reservations" class="tab-button py-3 px-4 font-medium text-lg whitespace-nowrap transition duration-200 rounded-lg bg-fuchsia-600 text-white shadow-md dark:bg-fuchsia-700 dark:text-white">
                         <i data-lucide="calendar-check" class="w-5 h-5 mr-2 inline-block"></i>
-                        予約フィギュア (未完了)
+                        予約リスト
                     </button>
                     <button id="tab-owned" data-tab="owned" class="tab-button py-3 px-4 font-medium text-lg whitespace-nowrap transition duration-200 rounded-lg text-gray-500 hover:text-fuchsia-600 hover:bg-fuchsia-50 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
                         <i data-lucide="archive" class="w-5 h-5 mr-2 inline-block"></i>
-                        所持フィギュア (完了)
+                        所持リスト
                     </button>
                 </nav>
             </div>
@@ -238,7 +238,7 @@
                         </button>
                         <h2 id="summary-title-reservations" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center">
                             <i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>
-                            グループサマリー
+                            全て
                         </h2>
                         <div id="group-summary-list" class="space-y-2">
                             <p class="text-gray-500 text-sm">グループ化オプションを選択してください。</p>
@@ -304,7 +304,7 @@
                         <div class="bg-white p-3 md:p-8 rounded-3xl shadow-2xl border border-gray-100">
                             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
                                 <i data-lucide="archive" class="w-5 h-5 mr-2 text-indigo-500"></i>
-                                所持フィギュアリスト
+                                所持リスト
                             </h2>
                             
                             <div id="loading-indicator-owned" class="text-center py-12 text-gray-500 hidden">
@@ -570,7 +570,7 @@
             let titleText;
             if (groupBy === 'none') {
                 // グループ化しない場合は、HTMLで設定されたデフォルトタイトルを維持 (例: グループサマリー)
-                titleText = view === 'reservations' ? 'グループサマリー' : '所持フィギュア サマリー';
+                titleText = view === 'reservations' ? 'すべて' : 'すべて';
             } else {
                 // ご要望に基づき、グループ名のみに変更
                 titleText = baseName;
