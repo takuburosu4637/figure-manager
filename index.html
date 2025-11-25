@@ -166,12 +166,45 @@
             animation: pulse-once 2s ease-out;
         }
 
-        /* 🔽 新規追加: 右下固定のハンバーガーメニューボタンのスタイル */
-        .fixed-menu-button {
+        /* 🔽 修正箇所: 右下固定のメニューボタンのスタイル */
+        .fixed-menu-container { /* 名前を修正: fixed-menu-button -> fixed-menu-container */
             position: fixed;
             bottom: 20px; /* 下からの距離 */
             right: 20px; /* 右からの距離 */
             z-index: 51; /* モーダルより手前 */
+            display: flex;
+            flex-direction: column; /* 縦に並べる */
+            gap: 15px; /* ボタン間のスペース */
+            align-items: flex-end; /* 右揃え */
+        }
+        /* 🔽 修正箇所: 新しい予約追加ボタンのスタイル */
+        .fixed-add-button {
+            /* サイズを少し大きくして目立たせる (Tailwindのp-4とw-14 h-14相当) */
+            width: 56px;
+            height: 56px;
+            padding: 1rem; /* p-4 */
+            border-radius: 9999px; /* rounded-full */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* 🔽 修正箇所: グループサマリーボタンのクラスを維持しつつ調整 */
+        .fixed-summary-button {
+            /* サイズを少し小さくして区別する (Tailwindのp-3とw-12 h-12相当) */
+            width: 48px;
+            height: 48px;
+            padding: 0.75rem; /* p-3 */
+            border-radius: 9999px; /* rounded-full */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* mdサイズ以上では非表示に戻す */
+        @media (min-width: 768px) {
+            .fixed-menu-container {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -186,7 +219,8 @@
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 flex items-center flex-grow justify-center">
                 <i data-lucide="box" class="w-8 h-8 mr-3 text-fuchsia-600"></i>
-                </h1>
+                フィギュアコレクション管理
+            </h1>
             <button id="toggle-dark-mode" class="p-3 rounded-full text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition duration-300 transform hover:scale-110">
                 <i data-lucide="moon" class="w-6 h-6"></i>
             </button>
@@ -215,11 +249,11 @@
             <div id="page-reservations" class="tab-page">
                 
                 <div class="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
-                    <button id="open-modal-btn" class="w-full md:w-auto px-8 py-3 bg-fuchsia-600 text-white font-bold rounded-full shadow-xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105 flex items-center justify-center">
+                    <button id="open-modal-btn-desktop" class="hidden md:w-auto md:px-8 md:py-3 md:bg-fuchsia-600 md:text-white md:font-bold md:rounded-full md:shadow-xl md:hover:bg-fuchsia-700 md:transition md:duration-300 md:transform md:hover:scale-105 md:flex md:items-center md:justify-center">
                         <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i>
                         新しい予約を追加
                     </button>
-                    <div class="flex items-center space-x-3">
+                    <div class="w-full md:w-auto"></div> <div class="flex items-center space-x-3">
                         <label for="group-by-select" class="text-gray-700 font-medium whitespace-nowrap">表示をグループ化:</label>
                         <select id="group-by-select" class="p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none bg-white">
                             <option value="none">グループ化しない</option>
@@ -330,14 +364,22 @@
         </div>
         </div>
 
-    <div id="mobile-fixed-menu" class="fixed-menu-button md:hidden">
+    <div id="mobile-fixed-menu" class="fixed-menu-container md:hidden">
+        
+        <button id="open-modal-btn-mobile" 
+            class="fixed-add-button bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105" 
+            aria-label="新しい予約を追加">
+            <i data-lucide="plus" class="w-8 h-8"></i>
+        </button>
+
         <button id="fixed-summary-btn-reservations" 
-            class="p-3 bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105" 
+            class="fixed-summary-button bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105" 
             aria-label="グループサマリーを開く (予約)">
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
+        
         <button id="fixed-summary-btn-owned" 
-            class="p-3 bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105 hidden" 
+            class="fixed-summary-button bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105 hidden" 
             aria-label="グループサマリーを開く (所持)">
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
@@ -472,7 +514,9 @@
 
         // DOM要素の取得
         const reservationListEl = document.getElementById('reservation-list');
-        const openModalBtn = document.getElementById('open-modal-btn');
+        // 🔽 修正: デスクトップ用とモバイル用を分ける
+        const openModalBtnDesktop = document.getElementById('open-modal-btn-desktop');
+        const openModalBtnMobile = document.getElementById('open-modal-btn-mobile'); 
         const closeModalBtn = document.getElementById('close-modal-btn');
         const modalCloseIcon = document.getElementById('modal-close-icon');
         const modal = document.getElementById('reservation-modal');
@@ -1271,10 +1315,10 @@
             const reservationsPage = document.getElementById('page-reservations');
             const ownedPage = document.getElementById('page-owned');
             
-            // 🔽 追加: 固定ボタンの取得
+            // 🔽 修正: 固定ボタンとモバイル予約追加ボタンの取得
             const fixedReservationsBtn = document.getElementById('fixed-summary-btn-reservations');
             const fixedOwnedBtn = document.getElementById('fixed-summary-btn-owned');
-
+            const mobileAddBtn = document.getElementById('open-modal-btn-mobile');
 
             // 2. タブボタンの切り替え
             if (view === 'reservations') {
@@ -1288,10 +1332,11 @@
                 ownedPage.classList.add('hidden');
                 currentView = 'reservations';
 
-                // 🔽 追加: 固定ボタンの切り替え
-                if (fixedReservationsBtn && fixedOwnedBtn) {
+                // 🔽 修正: 固定ボタンの切り替えとモバイル予約追加ボタンの表示
+                if (fixedReservationsBtn && fixedOwnedBtn && mobileAddBtn) {
                     fixedReservationsBtn.classList.remove('hidden');
                     fixedOwnedBtn.classList.add('hidden');
+                    mobileAddBtn.classList.remove('hidden'); // 予約ビューでのみ表示
                 }
             } else if (view === 'owned') {
                 ownedBtn.classList.add(...ACTIVE_CLASSES);
@@ -1304,10 +1349,11 @@
                 ownedPage.classList.remove('hidden');
                 currentView = 'owned';
                 
-                // 🔽 追加: 固定ボタンの切り替え
-                if (fixedReservationsBtn && fixedOwnedBtn) {
+                // 🔽 修正: 固定ボタンの切り替えとモバイル予約追加ボタンの非表示
+                if (fixedReservationsBtn && fixedOwnedBtn && mobileAddBtn) {
                     fixedReservationsBtn.classList.add('hidden');
                     fixedOwnedBtn.classList.remove('hidden');
+                    mobileAddBtn.classList.add('hidden'); // 所持ビューでは非表示
                 }
             } else {
                 return; // 無効なビュー
@@ -1394,7 +1440,14 @@
             initAuthAndDb();
             
             // 3. モーダルと削除モーダルのイベントリスナー設定
-            openModalBtn.onclick = () => openModal();
+            // 🔽 修正: デスクトップ用とモバイル用の両方にイベントリスナーを設定
+            if (openModalBtnDesktop) {
+                openModalBtnDesktop.onclick = () => openModal();
+            }
+            if (openModalBtnMobile) {
+                openModalBtnMobile.onclick = () => openModal();
+            }
+            
             closeModalBtn.onclick = closeModal;
             modalCloseIcon.onclick = closeModal;
             form.onsubmit = saveReservation;
