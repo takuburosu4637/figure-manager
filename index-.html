@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>フィギュアコレクション管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Interフォントの設定 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        /* === ライトモード（デフォルト） === */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* 背景色とグラデーションの変更 */
+            background: linear-gradient(135deg, #e0f7fa 0%, #f9f0ff 100%);
+            /* 🔽 修正: デフォルトのテキスト色を濃い色 (#1f2937) に戻し、各要素でコントラストを再調整 */
+            color: #1f2937;
+            transition: background-color 0.3s, color 0.3s;
+            /* 🔽 修正: デフォルトのフォントサイズを小さくする（スマホサイズが主） */
+            font-size: 0.95rem;
+        }
+        
+        /* 🔽 修正: タブレット以上で標準サイズに戻す */
+        @media (min-width: 768px) {
+            body {
+                font-size: 1rem;
+            }
+        }
+        
+        /* 🔽 修正: カードやコンテナの背景色を明示的に白（または非常に明るい色）に設定 */
+        .bg-white { background-color: #ffffff !important; }
+        
+        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; }
+
+        /* スクロールバーのカスタム (ライトモード) */
+        .reservation-list::-webkit-scrollbar-thumb {
+            background-color: #a78bfa; /* 紫系のサムネイル */
+            border-radius: 10px;
+        }
+        .reservation-list::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        /* 🔽 修正: input/select のライトモードでのテキスト色を明確に黒系統に設定 (背景色指定を削除) */
+        input:not(.dark *), select:not(.dark *) {
+             color: #1f2937; /* 濃い文字色を維持 */
+             /* 背景色はHTMLのbg-whiteクラスまたはブラウザのデフォルトに任せる */
+        }
+
+        /* 🔽 1. 統計情報カードの数字を黒に固定 */
+        /* カードの数字 (text-2xl font-bold text-gray-900) に当たる要素のライトモード時の色を黒に固定 */
+        .bg-white p.text-2xl.font-bold.text-gray-900 {
+            color: #1f2937 !important;
+        }
+
+        /* 🔽 2. 予約リスト内の情報（名前以外）を濃いグレーに固定 */
+        /* text-gray-600 の色を濃いグレーに (text-gray-700相当) */
+        .bg-white .text-gray-600 {
+            color: #374151 !important; /* 濃いグレー */
+        }
+        /* 🔽 予約リスト内の情報（spanタグで強調されている部分）を黒に固定 */
+        .bg-white .text-gray-900 {
+            color: #1f2937 !important; /* 黒に近い色 */
+        }
+        
+        /* === ダークモードのスタイル === */
+        /* 🔽 修正: セレクタを .dark body から body.dark に変更し、背景色が正しく適用されるように修正 */
+        body.dark {
+            background: #1f2937; /* 暗い背景 */
+            color: #f3f4f6; /* 明るいテキスト */
+        }
+        
+        /* 🌟 追加: サイドバーが開いているときに本文のスクロールを禁止 */
+        body.overflow-hidden {
+            overflow: hidden;
+        }
+
+        /* 🔽 ここがダークモード時のカードやコンテナの背景色です (濃いグレー) */
+        .dark .bg-white {
+            background-color: #374151 !important; /* 暗めのグレー */
+        }
+        
+        /* ダークモード時のシャドウを調整 */
+        .dark .shadow-2xl { 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important; 
+        }
+        
+        /* 🔽 修正: メインリストのグループヘッダーをfuchsia-600/text-whiteに修正 */
+        .group-header {
+            background-color: #ec4899; /* fuchsia-600 */
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .dark .group-header {
+            background-color: #db2777; /* fuchsia-700 or fuchsia-600 on dark */
+            color: #f3f4f6;
+        }
+        
+        /* 🔽 ここでテキスト色を白色系統に上書きしています */
+        .dark input, .dark select {
+            background-color: #4b5563; /* 濃いグレー */
+            color: #f3f4f6; /* 白系統の文字 (OK) */
+            border-color: #6b7280;
+        }
+        
+        .dark .border-gray-300 { border-color: #4b5563; }
+        .dark .text-gray-900 { color: #f3f4f6 !important; } /* 白系統の文字 (OK) */
+        .dark .text-gray-800 { color: #f3f4f6 !important; } /* グループサマリーと予約リストのH2タグなどに対応 */
+        .dark .text-gray-700 { color: #e5e7eb !important; } /* 白系統の文字 (OK) */
+        .dark .text-gray-600 { color: #d1d5db !important; } /* 白系統の文字 (OK) */
+        .dark .text-gray-500 { color: #9ca3af !important; } /* 白系統の文字 (OK) */
+        .dark p.text-2xl.font-bold.text-gray-900 { color: #f3f4f6 !important; } /* 統計情報カードの数字 */
+
+
+        /* スクロールバーのカスタム (ダークモード) */
+        .dark .reservation-list::-webkit-scrollbar-thumb {
+            background-color: #8b5cf6; 
+        }
+        .dark .reservation-list::-webkit-scrollbar-track {
+            background: #4b5563;
+        }
+
+        .reservation-list {
+            /* サイドバーとのバランスを考慮し、最大高さを設定 */
+            min-height: 70vh;
+        }
+        /* スクロールバーのカスタム */
+        .reservation-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .reservation-list::-webkit-scrollbar-thumb {
+            background-color: #a78bfa; /* 紫系のサムネイル */
+            border-radius: 10px;
+        }
+        .reservation-list::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        /* 画像をカードに収めるためのスタイル */
+        .figure-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            flex-shrink: 0; /* 画像が縮まないように */
+        }
+        
+        /* カスタムアニメーション（スクロールターゲットのハイライト用） (🌟 追加) */
+        @keyframes pulse-once {
+          0% { background-color: #8b5cf6; }
+          50% { background-color: #a78bfa; }
+          100% { background-color: #8b5cf6; }
+        }
+        .animate-pulse-once {
+            animation: pulse-once 2s ease-out;
+        }
+
+        /* 🔽 右下固定のメニューボタンのスタイル */
+        .fixed-menu-container { /* 名前を修正: fixed-menu-button -> fixed-menu-container */
+            position: fixed;
+            bottom: 20px; /* 下からの距離 */
+            right: 20px; /* 右からの距離 */
+            z-index: 51; /* モーダルより手前 */
+            display: flex;
+            flex-direction: column; /* 縦に並べる */
+            gap: 15px; /* ボタン間のスペース */
+            align-items: flex-end; /* 右揃え */
+        }
+        /* 🔽 新しい予約追加ボタンのスタイル */
+        .fixed-add-button {
+            /* サイズを少し大きくして目立たせる (Tailwindのp-4とw-14 h-14相当) */
+            width: 56px;
+            height: 56px;
+            padding: 1rem; /* p-4 */
+            border-radius: 9999px; /* rounded-full */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* 🔽 グループサマリーボタンのクラスを維持しつつ調整 */
+        .fixed-summary-button {
+            /* サイズを少し小さくして区別する (Tailwindのp-3とw-12 h-12相当) */
+            width: 48px;
+            height: 48px;
+            padding: 0.75rem; /* p-3 */
+            border-radius: 9999px; /* rounded-full */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* mdサイズ以上では非表示に戻す */
+        @media (min-width: 768px) {
+            .fixed-menu-container {
+                display: none;
+            }
+        }
+        
+        /* 🔽 修正箇所: モーダルコンテナが画面全体をスクロールできるようにする */
+        .scrollable-modal-container {
+            /* fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 p-4 */
+            overflow-y: auto; /* 👈 モーダル自体がスクロール可能になる */
+        }
+        
+        /* 🔽 修正箇所: モーダル内のコンテンツを画面中央に配置しつつ高さを制限する */
+        .modal-content-wrapper {
+            /* bg-white w-full max-w-xl rounded-2xl shadow-2xl p-8 relative transform transition-all duration-300 */
+            max-height: calc(100vh - 40px); /* 画面の高さから上下20pxのマージンを引いた高さに制限 */
+            overflow-y: auto; /* 👈 モーダルの中身がスクロール可能になる */
+            margin-top: auto; /* Flexアイテムとして上下中央に配置するために必要 */
+            margin-bottom: auto;
+        }
+        
+    </style>
+</head>
+<body>
+    <div id="app" class="max-w-7xl mx-auto">
+        
+        <div id="auth-info-firebase" class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 rounded-xl shadow-lg text-sm text-yellow-800 font-semibold flex items-center">
+            <i data-lucide="cloud-off" class="w-5 h-5 mr-3 inline-block"></i>
+            【未接続】`firebaseConfig`を設定して、Firebaseに接続してください。
+        </div>
+
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 flex items-center flex-grow justify-center">
+                <i data-lucide="box" class="w-8 h-8 text-fuchsia-600"></i>
+            </h1>
+            <button id="toggle-dark-mode" class="p-3 rounded-full text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition duration-300 transform hover:scale-110">
+                <i data-lucide="moon" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <div class="mb-8">
+            <div class="border-b border-gray-200 dark:border-gray-700">
+                <nav class="flex space-x-4" aria-label="Tabs">
+                    <button id="tab-reservations" data-tab="reservations" class="tab-button py-3 px-4 font-medium text-lg whitespace-nowrap transition duration-200 rounded-lg bg-fuchsia-600 text-white shadow-md dark:bg-fuchsia-700 dark:text-white">
+                        <i data-lucide="calendar-check" class="w-5 h-5 mr-2 inline-block"></i>
+                        予約リスト
+                    </button>
+                    <button id="tab-owned" data-tab="owned" class="tab-button py-3 px-4 font-medium text-lg whitespace-nowrap transition duration-200 rounded-lg text-gray-500 hover:text-fuchsia-600 hover:bg-fuchsia-50 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                        <i data-lucide="archive" class="w-5 h-5 mr-2 inline-block"></i>
+                        所持リスト
+                    </button>
+                </nav>
+            </div>
+        </div>
+        
+        <div id="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            </div>
+
+        <div id="tab-content-container">
+
+            <div id="page-reservations" class="tab-page">
+                
+                <div class="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
+                    <button id="open-modal-btn-desktop" class="hidden md:w-auto md:px-8 md:py-3 md:bg-fuchsia-600 md:text-white md:font-bold md:rounded-full md:shadow-xl md:hover:bg-fuchsia-700 md:transition md:duration-300 md:transform md:hover:scale-105 md:flex md:items-center md:justify-center">
+                        <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i>
+                        新しい予約を追加
+                    </button>
+                    <div class="w-full md:w-auto"></div> <div class="flex items-center space-x-3">
+                        <label for="group-by-select" class="text-gray-700 font-medium whitespace-nowrap">表示をグループ化:</label>
+                        <select id="group-by-select" class="p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none bg-white">
+                            <option value="none">グループ化しない</option>
+                            <option value="releaseDateMonth">発売月</option>
+                            <option value="manufacturer">メーカー</option>
+                            <option value="shop">購入店舗</option>
+                            <option value="scale">スケール</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="main-content-wrapper-reservations" class="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+                    <div id="group-summary-sidebar" class="fixed inset-y-0 left-0 w-80 bg-white z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 md:col-span-3 md:h-fit md:sticky md:top-4 md:p-6 md:rounded-3xl md:shadow-2xl md:border md:border-gray-100 p-6 rounded-r-3xl shadow-2xl border-r border-t border-b border-gray-200 overflow-y-auto">
+                        <button id="close-summary-btn-reservations" class="md:hidden absolute top-4 right-4 text-gray-500 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition z-50">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                        <h2 id="summary-title-reservations" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center">
+                            <i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>
+                            グループサマリー
+                        </h2>
+                        <div id="group-summary-list" class="space-y-2">
+                            <p class="text-gray-500 text-sm">グループ化オプションを選択してください。</p>
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-9">
+                        <div class="bg-white p-3 md:p-8 rounded-3xl shadow-2xl border border-gray-100">
+                            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
+                                <i data-lucide="list-checks" class="w-5 h-5 mr-2 text-indigo-500"></i>
+                                予約リスト
+                            </h2>
+                            
+                            <div id="loading-indicator" class="text-center py-12 text-gray-500 hidden">
+                                <i data-lucide="loader-circle" class="w-8 h-8 animate-spin mx-auto mb-3 text-indigo-500"></i>
+                                データをクラウドから読み込み中...
+                            </div>
+
+                            <div id="reservation-list" class="reservation-list space-y-5">
+                            </div>
+
+                            <div id="no-data-message" class="text-center py-12 text-gray-400 hidden">
+                                <i data-lucide="info" class="w-8 h-8 mx-auto mb-3"></i>
+                                <p class="text-lg font-medium">現在、登録されている予約はありません。</p>
+                                <p>上の「新しい予約を追加」ボタンから登録を始めましょう！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="sidebar-overlay-reservations" class="hidden md:hidden fixed inset-0 bg-gray-900 bg-opacity-70 z-40 transition-opacity duration-300"></div>
+            </div>
+            
+            <div id="page-owned" class="tab-page hidden">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
+                    <div class="flex-grow"></div> 
+                    <div class="flex items-center space-x-3">
+                        <label for="group-by-select-owned" class="text-gray-700 font-medium whitespace-nowrap">表示をグループ化:</label>
+                        <select id="group-by-select-owned" class="p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none bg-white">
+                            <option value="none">グループ化しない</option>
+                            <option value="releaseDateMonth">購入/受取月</option>
+                            <option value="manufacturer">メーカー</option>
+                            <option value="shop">購入店舗</option>
+                            <option value="scale">スケール</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="main-content-wrapper-owned" class="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+                    <div id="group-summary-sidebar-owned" class="fixed inset-y-0 left-0 w-80 bg-white z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 md:col-span-3 md:h-fit md:sticky md:top-4 md:p-6 md:rounded-3xl md:shadow-2xl md:border md:border-gray-100 p-6 rounded-r-3xl shadow-2xl border-r border-t border-b border-gray-200 overflow-y-auto">
+                        <button id="close-summary-btn-owned" class="md:hidden absolute top-4 right-4 text-gray-500 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition z-50">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                        <h2 id="summary-title-owned" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center">
+                            <i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>
+                            所持フィギュア サマリー
+                        </h2>
+                        <div id="group-summary-list-owned" class="space-y-2">
+                            <p class="text-gray-500 text-sm">グループ化オプションを選択してください。</p>
+                            </div>
+                    </div>
+                    
+                    <div class="md:col-span-9">
+                        <div class="bg-white p-3 md:p-8 rounded-3xl shadow-2xl border border-gray-100">
+                            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
+                                <i data-lucide="archive" class="w-5 h-5 mr-2 text-indigo-500"></i>
+                                所持リスト
+                            </h2>
+                            
+                            <div id="loading-indicator-owned" class="text-center py-12 text-gray-500 hidden">
+                                <i data-lucide="loader-circle" class="w-8 h-8 animate-spin mx-auto mb-3 text-indigo-500"></i>
+                                データをクラウドから読み込み中...
+                            </div>
+
+                            <div id="owned-list" class="reservation-list space-y-5">
+                            </div>
+
+                            <div id="no-owned-data-message" class="text-center py-12 text-gray-400 hidden">
+                                <i data-lucide="info" class="w-8 h-8 mx-auto mb-3"></i>
+                                <p class="text-lg font-medium">現在、受け取り済みのフィギュアはありません。</p>
+                                <p>予約リストからステータスを「受け取り済み/完了」に更新してください！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="sidebar-overlay-owned" class="hidden md:hidden fixed inset-0 bg-gray-900 bg-opacity-70 z-40 transition-opacity duration-300"></div>
+            </div>
+
+        </div>
+        </div>
+
+    <div id="mobile-fixed-menu" class="fixed-menu-container md:hidden">
+        
+        <button id="open-modal-btn-mobile" 
+            class="fixed-add-button bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105" 
+            aria-label="新しい予約を追加">
+            <i data-lucide="plus" class="w-8 h-8"></i>
+        </button>
+
+        <button id="fixed-summary-btn-reservations" 
+            class="fixed-summary-button bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105" 
+            aria-label="グループサマリーを開く (予約)">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        
+        <button id="fixed-summary-btn-owned" 
+            class="fixed-summary-button bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105 hidden" 
+            aria-label="グループサマリーを開く (所持)">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+    </div>
+    
+    <div id="reservation-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 hidden p-4 scrollable-modal-container">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-8 relative transform transition-all duration-300 modal-content-wrapper">
+            <h2 id="modal-title" class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">新しい予約を追加</h2>
+            
+            <form id="reservation-form" class="space-y-5">
+                <input type="hidden" id="doc-id">
+
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">フィギュア名 <span class="text-red-500">*</span></label>
+                    <input type="text" id="name" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                </div>
+                
+                <div>
+                    <label for="imageUrl" class="block text-sm font-medium text-gray-700">画像URL</label>
+                    <input type="url" id="imageUrl" placeholder="http://..." class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="manufacturer" class="block text-sm font-medium text-gray-700">メーカー名/ブランド名</label>
+                        <input type="text" id="manufacturer" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                    <div>
+                        <label for="scale" class="block text-sm font-medium text-gray-700">スケール情報 (例: 1/7, HG)</label>
+                        <input type="text" id="scale" placeholder="例: 1/7" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="reservationDate" class="block text-sm font-medium text-gray-700">予約日 <span class="text-red-500">*</span></label>
+                        <input type="date" id="reservationDate" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none transition duration-150">
+                    </div>
+                    <div>
+                        <label for="releaseDate" class="block text-sm font-medium text-gray-700">発売/引渡予定日 <span class="text-red-500">*</span></label>
+                        <input type="date" id="releaseDate" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none transition duration-150">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="shop" class="block text-sm font-medium text-gray-700">購入店舗/予約サイト</label>
+                        <input type="text" id="shop" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-gray-700">価格 (円)</label>
+                        <input type="number" id="price" min="0" value="0" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700">予約状況 <span class="text-red-500">*</span></label>
+                    <select id="status" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none transition duration-150 bg-white">
+                        <option value="予約済み">予約済み</option>
+                        <option value="支払い済み（未発送）">支払い済み（未発送）</option>
+                        <option value="発送連絡待ち">発送連絡待ち</option>
+                        <option value="キャンセル">キャンセル</option>
+                        <option value="受け取り済み/完了">受け取り済み/完了</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="orderNumber" class="block text-sm font-medium text-gray-700">注文番号/予約番号</label>
+                        <input type="text" id="orderNumber" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                    <div>
+                        <label for="notes" class="block text-sm font-medium text-gray-700">備考欄</label>
+                        <input type="text" id="notes" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-5">
+                    <button type="button" id="close-modal-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition duration-150 font-medium">キャンセル</button>
+                    <button type="submit" class="px-8 py-2 bg-indigo-600 text-white font-bold rounded-full shadow-lg hover:bg-indigo-700 transition duration-150 transform hover:scale-105">保存</button>
+                </div>
+            </form>
+            <button id="modal-close-icon" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="delete-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 space-y-4">
+            <h3 class="text-xl font-bold text-red-600 flex items-center">
+                <i data-lucide="alert-triangle" class="w-6 h-6 mr-2"></i>
+                削除の確認
+            </h3>
+            <p class="text-gray-700">本当にこの予約情報（<span id="delete-item-name" class="font-bold"></span>）を削除しますか？この操作は元に戻せません。</p>
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" id="cancel-delete-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition duration-150">キャンセル</button>
+                <button type="button" id="confirm-delete-btn" class="px-8 py-2 bg-red-600 text-white font-bold rounded-full shadow-md hover:bg-red-700 transition duration-150">削除を実行</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="figure-detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 hidden p-4 scrollable-modal-container">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-8 relative transform transition-all duration-300 modal-content-wrapper">
+            <h2 id="detail-modal-title" class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2 flex items-center">
+                <i data-lucide="info" class="w-7 h-7 mr-2 text-indigo-500"></i>
+                フィギュア詳細情報
+            </h2>
+
+            <div id="detail-modal-content" class="space-y-4">
+                </div>
+            
+            <div class="flex justify-end pt-6">
+                 <button type="button" id="close-detail-modal-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition duration-150 font-medium">閉じる</button>
+            </div>
+
+            <button id="detail-modal-close-icon" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, setDoc, deleteDoc, onSnapshot, collection, query, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // デバッグログを有効化（推奨）
+        setLogLevel('Debug');
+        
+        // =========================================================
+        // 🚨 【重要】ステップ2：ここにあなたのFirebase設定を貼り付けてください
+        // (添付コードのものをそのまま使用します)
+        // =========================================================
+    	const firebaseConfig = {
+  		apiKey: "AIzaSyD9jmIafM4JjpJyv65WjFWlbV_n9dssUt4",
+  		authDomain: "figure-manager-app.firebaseapp.com",
+  		projectId: "figure-manager-app",
+  		storageBucket: "figure-manager-app.firebaseapp.com",
+  		messagingSenderId: "487492839040",
+  		appId: "1:487492839040:web:a43419d861335f259da865",
+  		measurementId: "G-19FTK3XTW4"
+	};
+        // =========================================================
+        // 🚨 ここから下は編集しないでください
+        // =========================================================
+
+        let db, auth;
+        let reservations = [];
+        const COLLECTION_NAME = 'figure_reservations_data'; 
+
+        // DOM要素の...
+        const app = document.getElementById('app');
+        const authInfoFirebase = document.getElementById('auth-info-firebase');
+        const toggleDarkModeBtn = document.getElementById('toggle-dark-mode');
+        const reservationsBtn = document.getElementById('tab-reservations');
+        const ownedBtn = document.getElementById('tab-owned');
+        const reservationsPage = document.getElementById('page-reservations');
+        const ownedPage = document.getElementById('page-owned');
+        const statsEl = document.getElementById('stats');
+        const reservationListEl = document.getElementById('reservation-list');
+        const ownedListEl = document.getElementById('owned-list');
+        const noDataMessage = document.getElementById('no-data-message');
+        const noOwnedDataMessage = document.getElementById('no-owned-data-message');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadingIndicatorOwned = document.getElementById('loading-indicator-owned');
+        const groupBySelect = document.getElementById('group-by-select');
+        const groupBySelectOwned = document.getElementById('group-by-select-owned');
+        
+        // グループサマリー要素
+        const sidebarReservationsEl = document.getElementById('group-summary-sidebar');
+        const sidebarOwnedEl = document.getElementById('group-summary-sidebar-owned');
+        const groupSummaryListEl = document.getElementById('group-summary-list');
+        const groupSummaryListOwnedEl = document.getElementById('group-summary-list-owned');
+        const summaryTitleReservationsEl = document.getElementById('summary-title-reservations');
+        const summaryTitleOwnedEl = document.getElementById('summary-title-owned');
+        const sidebarOverlayReservations = document.getElementById('sidebar-overlay-reservations');
+        const sidebarOverlayOwned = document.getElementById('sidebar-overlay-owned');
+
+        // モバイル固定ボタン
+        const openSummaryBtnReservations = document.getElementById('fixed-summary-btn-reservations'); // 🌟 変更: idを合わせる
+        const openSummaryBtnOwned = document.getElementById('fixed-summary-btn-owned'); // 🌟 変更: idを合わせる
+        const openModalBtnMobile = document.getElementById('open-modal-btn-mobile');
+        const closeSummaryBtnReservations = document.getElementById('close-summary-btn-reservations');
+        const closeSummaryBtnOwned = document.getElementById('close-summary-btn-owned');
+
+
+        // モーダル要素
+        const modal = document.getElementById('reservation-modal');
+        const openModalBtnDesktop = document.getElementById('open-modal-btn-desktop');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalCloseIcon = document.getElementById('modal-close-icon');
+        const modalTitleEl = document.getElementById('modal-title');
+        const reservationForm = document.getElementById('reservation-form');
+        
+        // 削除モーダル要素
+        const deleteModal = document.getElementById('delete-modal');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const deleteItemNameEl = document.getElementById('delete-item-name');
+        let docIdToDelete = null;
+
+        // 新規追加: 詳細モーダル関連
+        const detailModal = document.getElementById('figure-detail-modal');
+        const detailModalTitleEl = document.getElementById('detail-modal-title');
+        const detailModalContentEl = document.getElementById('detail-modal-content');
+        const closeDetailModalBtn = document.getElementById('close-detail-modal-btn');
+        const detailModalCloseIcon = document.getElementById('detail-modal-close-icon');
+
+        // 状態管理
+        let currentView = 'reservations'; // 'reservations' or 'owned'
+
+        const STATUS_COMPLETED = '受け取り済み/完了';
+        const STATUS_CANCELLED = 'キャンセル';
+        const STATUS_COLORS = {
+            '予約済み': 'bg-blue-100 text-blue-800 border-blue-300',
+            '支払い済み（未発送）': 'bg-indigo-100 text-indigo-800 border-indigo-300',
+            '発送連絡待ち': 'bg-purple-100 text-purple-800 border-purple-300',
+            'キャンセル': 'bg-red-100 text-red-800 border-red-300',
+            '受け取り済み/完了': 'bg-green-100 text-green-800 border-green-300',
+        };
+
+        const ACTIVE_CLASSES = ['bg-fuchsia-600', 'text-white', 'shadow-md', 'dark:bg-fuchsia-700', 'dark:text-white'];
+        const INACTIVE_CLASSES = ['text-gray-500', 'hover:text-fuchsia-600', 'hover:bg-fuchsia-50', 'dark:text-gray-400', 'dark:hover:bg-gray-700', 'dark:hover:text-white', 'bg-fuchsia-600', 'text-white', 'shadow-md', 'dark:bg-fuchsia-700', 'dark:text-white'];
+
+        // 🔽 修正: グループ化キーと表示名のマッピング (サマリータイトル用に追加)
+        const GROUP_BY_NAMES = {
+            'none': '全アイテム',
+            'releaseDateMonth': '発売月',
+            'manufacturer': 'メーカー',
+            'shop': '購入店舗',
+            'scale': 'スケール',
+        };
+
+        /**
+         * グループ化キーを日本語の表示名に変換する
+         */
+        const getGroupByDisplayName = (groupBy) => {
+            return GROUP_BY_NAMES[groupBy] || GROUP_BY_NAMES['none'];
+        };
+        
+        /**
+         * 🌟 修正: グループサマリーのタイトルを更新する関数
+         */
+        const updateSummaryTitle = (view, groupBy) => {
+            const titleEl = view === 'reservations' ? summaryTitleReservationsEl : summaryTitleOwnedEl;
+            const title = view === 'reservations' ? 'グループサマリー' : '所持フィギュア サマリー';
+            const groupByText = getGroupByDisplayName(groupBy);
+            
+            titleEl.innerHTML = `
+                <i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>
+                ${title} (${groupByText}別)
+            `;
+            lucide.createIcons();
+        };
+
+        /**
+         * 通貨表示をフォーマットするヘルパー関数
+         */
+        const formatCurrency = (amount) => {
+            if (amount === null || amount === undefined) return '¥ 0';
+            return '¥ ' + amount.toLocaleString('ja-JP');
+        };
+        
+        /**
+         * 日付をフォーマットするヘルパー関数
+         */
+        const formatDate = (dateString) => {
+            if (!dateString) return '日付未定';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+            } catch (e) {
+                return '日付不正';
+            }
+        };
+
+        /**
+         * 統計情報カードのHTMLを生成するヘルパー関数
+         */
+        // 🔽 修正: アイコンと colorClass の引数を削除 (createStatCardはHTML要素でなくHTML文字列を返す)
+        const createStatCard = (title, value) => {
+            return `
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 dark:bg-gray-700 dark:border-gray-600">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">${title}</p>
+                    <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">${value}</p>
+                </div>
+            `;
+        };
+        
+        /**
+         * 統計情報を更新する
+         * @param {'reservations'|'owned'} view - 表示中のビュー
+         */
+        const updateStats = (view) => {
+            const thisYear = new Date().getFullYear();
+            const thisMonth = new Date().getMonth(); // 0-11
+            
+            if (view === 'reservations') {
+                // --- 予約ビューの統計 (未完了のみ) ---
+                const pendingReservations = reservations.filter(r => r.status !== STATUS_COMPLETED && r.status !== STATUS_CANCELLED);
+                const totalReservations = reservations.length;
+                let totalReserved = 0;
+                let upcomingPaymentTotal = 0;
+                
+                pendingReservations.forEach(r => {
+                    totalReserved += r.price || 0;
+
+                    const releaseDate = r.releaseDate ? new Date(r.releaseDate) : null;
+                    if (releaseDate) {
+                        const releaseYear = releaseDate.getFullYear();
+                        const releaseMonth = releaseDate.getMonth(); // 0-11
+
+                        // 今月 (currentMonth) または来月 (currentMonth + 1) の発売予定
+                        if (releaseYear === thisYear && (releaseMonth === thisMonth || releaseMonth === (thisMonth + 1) % 12) || (releaseYear === thisYear + 1 && thisMonth === 11 && releaseMonth === 0)) {
+                            upcomingPaymentTotal += r.price || 0;
+                        }
+                    }
+                });
+
+                // 🔽 修正: アイコンと colorClass の引数を削除
+                statsEl.innerHTML = `
+                    ${createStatCard('予約総件数 (全データ)', totalReservations)}
+                    ${createStatCard('未完了件数', pendingReservations.length)}
+                    ${createStatCard('支払い予定総額', formatCurrency(totalReserved))}
+                    ${createStatCard('今月・来月支払予定額', formatCurrency(upcomingPaymentTotal))}
+                `;
+
+            } else if (view === 'owned') {
+                // --- 所持ビューの統計 (新規ロジック) ---
+                const ownedReservations = reservations.filter(r => r.status === STATUS_COMPLETED);
+                let totalOwnedPrice = 0;
+                let thisYearOwnedCount = 0;
+                
+                ownedReservations.forEach(r => {
+                    totalOwnedPrice += r.price || 0;
+                    const releaseDate = r.releaseDate ? new Date(r.releaseDate) : null; // releaseDateをここでは「取得日」と見なす
+                    if (releaseDate && releaseDate.getFullYear() === thisYear) {
+                        thisYearOwnedCount++;
+                    }
+                });
+                const totalOwnedCount = ownedReservations.length;
+
+                // 所持ビュー用の統計カード
+                // 🔽 修正: アイコンと colorClass の引数を削除
+                statsEl.innerHTML = `
+                    ${createStatCard('所持総件数', totalOwnedCount)}
+                    ${createStatCard('本年取得件数', thisYearOwnedCount)}
+                    ${createStatCard('総購入額', formatCurrency(totalOwnedPrice))}
+                    ${createStatCard('平均単価', totalOwnedCount > 0 ? formatCurrency(Math.round(totalOwnedPrice / totalOwnedCount)) : formatCurrency(0))}
+                `;
+            }
+            
+            // 🔽 修正: アイコンがないため、この行は削除またはそのまま残しても影響なし
+            lucide.createIcons();
+        };
+
+        /**
+         * 🌟 グループサマリーリストを描画する
+         */
+        const renderGroupSummary = (reservationsToRender, groupSummaryTargetEl, groupBy, viewTitle) => {
+            groupSummaryTargetEl.innerHTML = '';
+
+            if (reservationsToRender.length === 0) {
+                groupSummaryTargetEl.innerHTML = `
+                    <p class="text-gray-500 text-sm p-2">該当するアイテムはありません。</p>
+                `;
+                return;
+            }
+
+            // グループ化のロジック
+            let groupedReservations = {};
+            if (groupBy === 'none') {
+                groupedReservations['全件'] = reservationsToRender;
+            } else {
+                reservationsToRender.forEach(r => {
+                    let groupKey;
+                    if (groupBy === 'releaseDateMonth') {
+                        const date = r.releaseDate;
+                        if (date) {
+                            const [year, month] = date.split('-').slice(0, 2);
+                            const statusSuffix = r.status === STATUS_COMPLETED ? '(所持)' : '(予約)';
+                            groupKey = `${year}-${month} ${statusSuffix}`;
+                        } else {
+                            groupKey = '発売日未定 (未定)';
+                        }
+                    } else if (groupBy === 'manufacturer') {
+                        groupKey = r.manufacturer && r.manufacturer.trim() !== '' ? r.manufacturer : 'メーカー不明';
+                    } else if (groupBy === 'shop') {
+                        groupKey = r.shop && r.shop.trim() !== '' ? r.shop : '店舗不明';
+                    } else if (groupBy === 'scale') {
+                        groupKey = r.scale && r.scale.trim() !== '' ? r.scale : 'スケール不明';
+                    } else {
+                        return;
+                    }
+                    if (!groupedReservations[groupKey]) {
+                        groupedReservations[groupKey] = [];
+                    }
+                    groupedReservations[groupKey].push(r);
+                });
+            }
+
+            // ソートロジック (releaseDateMonthを優先し、それ以外はキーでソート)
+            const sortedGroupKeys = Object.keys(groupedReservations).sort((a, b) => {
+                if (groupBy === 'releaseDateMonth') {
+                    if (a.includes('未定')) return 1;
+                    if (b.includes('未定')) return -1;
+                    return a.localeCompare(b);
+                }
+                if (groupBy === 'none') return 0;
+                // それ以外はキーの文字列でソート
+                return a.localeCompare(b);
+            });
+
+            // リストに描画
+            sortedGroupKeys.forEach(groupKey => {
+                const reservationsInGroup = groupedReservations[groupKey];
+                const count = reservationsInGroup.length;
+                let displayKey = groupKey;
+                if (groupBy === 'releaseDateMonth' && groupKey.includes(' ')) {
+                    const [datePart, titlePart] = groupKey.split(' ');
+                    const [year, month] = datePart.split('-');
+                    displayKey = `${year}年${month}月 ${titlePart}`;
+                }
+
+                const groupContainer = document.createElement('div');
+                // 🔽 修正: ボーダーの色をfuchsia-600に
+                groupContainer.className = 'group-summary-item border border-fuchsia-600 dark:border-fuchsia-400 rounded-xl shadow-sm hover:shadow-md transition duration-200';
+                
+                // ヘッダー
+                const header = document.createElement('div');
+                // 🔽 修正1: ダークモードでもbg-fuchsia-600/text-whiteになるようにクラスを修正
+                header.className = 'p-3 bg-fuchsia-600 font-bold text-white cursor-pointer flex justify-between items-center rounded-xl transition duration-150 hover:bg-fuchsia-700 dark:hover:bg-fuchsia-700';
+                header.innerHTML = `
+                    <span class="text-sm md:text-md">${displayKey}</span>
+                    <span class="text-sm font-semibold flex items-center">
+                        (${count}件)
+                        <i data-lucide="chevron-down" class="summary-chevron w-4 h-4 ml-2 transition-transform duration-200"></i>
+                    </span>
+                `;
+                groupContainer.appendChild(header);
+
+                // フィギュアリスト
+                const figureList = document.createElement('ul');
+                // 🔽 修正: リスト内の文字色をtext-gray-900（黒に近い色）に
+                figureList.className = 'p-3 space-y-1 list-disc list-inside text-gray-900 dark:text-gray-300';
+                
+                // 項目を追加
+                reservationsInGroup.forEach(r => {
+                    const figureItem = document.createElement('li');
+                    figureItem.className = 'text-sm cursor-pointer hover:text-fuchsia-600 dark:hover:text-fuchsia-400 transition duration-150 truncate';
+                    figureItem.textContent = r.name + (r.scale && r.scale.trim() !== '' ? ` (${r.scale})` : '');
+
+                    // 🌟 個別フィギュア項目をクリックすると該当カードにスクロール
+                    const scrollHandler = () => {
+                        const targetCard = document.getElementById(`item-${r.id}`);
+                        if (targetCard) {
+                            // 🌟 スクロール処理
+                            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // 🌟 一時的なハイライトアニメーション
+                            targetCard.classList.add('animate-pulse-once');
+                            setTimeout(() => {
+                                targetCard.classList.remove('animate-pulse-once');
+                            }, 2000); // 2秒後にアニメーションを解除
+                            
+                            // 🌟 モバイルの場合はサイドバーを閉じる
+                            if (window.innerWidth < 768) {
+                                closeSidebar(viewTitle === '予約' ? 'reservations' : 'owned');
+                            }
+                        }
+                    };
+                    figureItem.addEventListener('click', scrollHandler);
+
+                    figureList.appendChild(figureItem);
+                });
+
+                groupContainer.appendChild(figureList);
+                
+                // 開閉トグルのイベントリスナーを設定
+                header.addEventListener('click', () => {
+                    const isHidden = figureList.classList.toggle('hidden');
+                    const chevron = header.querySelector('.summary-chevron');
+                    if (chevron) {
+                        chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
+                    }
+                });
+
+                // 初期状態ではリストを非表示
+                figureList.classList.add('hidden');
+                
+                groupSummaryTargetEl.appendChild(groupContainer);
+            });
+
+            lucide.createIcons();
+        };
+
+
+        /**
+         * 🌟 メインのフィギュアリストを描画する
+         */
+        const renderReservationList = (reservationsToRender, listTargetEl, noDataMessageEl, groupBy, viewTitle, showEditAndDelete) => {
+            listTargetEl.innerHTML = '';
+            
+            // データを表示
+            if (reservationsToRender.length > 0) {
+                noDataMessageEl.classList.add('hidden');
+                
+                // グループ化のロジック
+                let groupedReservations = {};
+                if (groupBy === 'none') {
+                    groupedReservations['all'] = reservationsToRender;
+                } else {
+                    reservationsToRender.forEach(r => {
+                        let groupKey;
+                        if (groupBy === 'releaseDateMonth') {
+                            const date = r.releaseDate;
+                            if (date) {
+                                const [year, month] = date.split('-').slice(0, 2);
+                                const statusSuffix = r.status === STATUS_COMPLETED ? '(所持)' : '(予約)';
+                                groupKey = `${year}-${month} ${statusSuffix}`;
+                            } else {
+                                groupKey = '発売日未定 (未定)';
+                            }
+                        } else if (groupBy === 'manufacturer') {
+                            groupKey = r.manufacturer && r.manufacturer.trim() !== '' ? r.manufacturer : 'メーカー不明';
+                        } else if (groupBy === 'shop') {
+                            groupKey = r.shop && r.shop.trim() !== '' ? r.shop : '店舗不明';
+                        } else if (groupBy === 'scale') {
+                            groupKey = r.scale && r.scale.trim() !== '' ? r.scale : 'スケール不明';
+                        } else {
+                            return;
+                        }
+                        
+                        if (!groupedReservations[groupKey]) {
+                            groupedReservations[groupKey] = [];
+                        }
+                        groupedReservations[groupKey].push(r);
+                    });
+                }
+                
+                // ソートロジック (releaseDateMonthを優先し、それ以外はキーでソート)
+                const sortedGroupKeys = Object.keys(groupedReservations).sort((a, b) => {
+                    if (groupBy === 'releaseDateMonth') {
+                        if (a.includes('未定')) return 1;
+                        if (b.includes('未定')) return -1;
+                        return a.localeCompare(b);
+                    }
+                    if (groupBy === 'none') return 0;
+                    return a.localeCompare(b);
+                });
+
+                // リストに描画
+                sortedGroupKeys.forEach(groupKey => {
+                    const reservationsInGroup = groupedReservations[groupKey];
+                    
+                    if (groupBy !== 'none') {
+                        const groupHeader = document.createElement('h3');
+                        let displayKey = groupKey;
+                        if (groupBy === 'releaseDateMonth' && groupKey.includes(' ')) {
+                            const [year, month] = groupKey.split(' ')[0].split('-');
+                            displayKey = `${year}年${month}月 ${groupKey.split(' ')[1]}`;
+                        }
+                        groupHeader.className = 'group-header';
+                        groupHeader.innerHTML = `${displayKey} <span class="text-sm ml-2 font-normal">(${reservationsInGroup.length}件)</span>`;
+                        listTargetEl.appendChild(groupHeader);
+                    }
+
+                    // グループ内のアイテムを描画
+                    reservationsInGroup.forEach(r => {
+                        listTargetEl.appendChild(createReservationCard(r, viewTitle, showEditAndDelete));
+                    });
+                });
+
+                addEventListeners(); // 動的要素のイベントリスナーを再設定
+                lucide.createIcons();
+
+            } else {
+                // データがない場合はメッセージを表示
+                noDataMessageEl.classList.remove('hidden');
+            }
+        };
+
+        /**
+         * 予約フィギュアカードのHTML要素を生成するヘルパー関数
+         */
+        const createReservationCard = (reservation, viewTitle, showEditAndDelete) => {
+            const imageUrl = reservation.imageUrl || 'https://via.placeholder.com/100x100?text=No+Image';
+            const isCompleted = reservation.status === STATUS_COMPLETED;
+            const statusColorClass = STATUS_COLORS[reservation.status] || 'bg-gray-100 text-gray-800 border-gray-300';
+
+            const card = document.createElement('div');
+            // 🔽 修正: ライトモードでの背景色を白 (#ffffff) に変更してコントラストを確保。
+            const cardClass = `p-4 border border-gray-200 rounded-xl shadow-md bg-white transition duration-200 flex space-x-4 items-center ${viewTitle === '予約' && isCompleted ? 'opacity-70 bg-gray-50 dark:bg-gray-700' : 'hover:shadow-lg hover:border-fuchsia-300'} figure-card-clickable cursor-pointer`;
+            
+            card.className = cardClass;
+            card.id = `item-${reservation.id}`;
+            card.setAttribute('data-doc-id', reservation.id);
+            
+            const cardBodyHtml = `
+                <div class="figure-image-wrapper">
+                    <img src="${imageUrl}" alt="${reservation.name}" class="figure-image border border-gray-200 dark:border-gray-600">
+                </div>
+                <div class="flex-grow space-y-1 text-gray-900 dark:text-gray-300">
+                    <p class="font-bold text-lg text-gray-900 dark:text-white">${reservation.name}</p>
+                    <p class="text-sm truncate"><i data-lucide="building" class="w-4 h-4 mr-1 text-fuchsia-500"></i> メーカー: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.manufacturer || 'N/A'}</span></p>
+                    <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-sm">
+                        <p class="truncate sm:col-span-1">
+                            <i data-lucide="calendar" class="w-4 h-4 mr-2 text-indigo-500"></i> 発売予定: <span class="text-gray-900 dark:text-white font-semibold ml-1">${formatDate(reservation.releaseDate)}</span>
+                        </p>
+                        ${reservation.price > 0 ? `<p class="truncate sm:col-span-1">
+                            <i data-lucide="yen" class="w-4 h-4 mr-2 text-green-500"></i> 価格: <span class="text-gray-900 dark:text-white font-semibold ml-1">${formatCurrency(reservation.price)}</span>
+                        </p>` : ''}
+                        ${reservation.scale ? `<p class="truncate sm:col-span-1">
+                            <i data-lucide="ruler" class="w-4 h-4 mr-2 text-orange-500"></i> スケール: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.scale}</span>
+                        </p>` : ''}
+                        ${reservation.shop ? `<p class="truncate sm:col-span-1">
+                            <i data-lucide="store" class="w-4 h-4 mr-2 text-pink-500"></i> 店舗: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.shop}</span>
+                        </p>` : ''}
+                    </div>
+                    <div class="mt-3 flex flex-wrap gap-2 items-center">
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full border ${statusColorClass}">
+                            ${reservation.status}
+                        </span>
+                    </div>
+                </div>
+            `;
+            
+            if (showEditAndDelete) {
+                const buttonHtml = `
+                    <div class="flex flex-col space-y-2 ml-4 flex-shrink-0">
+                        <button class="edit-btn p-2 rounded-full text-indigo-600 hover:bg-indigo-100 transition duration-150" data-doc-id="${reservation.id}" aria-label="編集">
+                            <i data-lucide="pencil" class="w-5 h-5"></i>
+                        </button>
+                        <button class="delete-btn p-2 rounded-full text-red-600 hover:bg-red-100 transition duration-150" data-doc-id="${reservation.id}" data-item-name="${reservation.name}" aria-label="削除">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                `;
+                card.innerHTML = cardBodyHtml + buttonHtml;
+            } else {
+                card.innerHTML = cardBodyHtml;
+            }
+
+            return card;
+        };
+
+        // 🔽🔽🔽 新規追加: 詳細モーダル関連の関数 🔽🔽🔽
+        
+        /**
+         * 詳細モーダル内の個別の表示アイテムを生成するヘルパー
+         */
+        const createDetailItem = (label, value, isFullWidth = false) => {
+            const displayValue = value && value.trim() !== '' ? value : 'N/A';
+            return `
+                <div class="${isFullWidth ? 'sm:col-span-2' : 'sm:col-span-1'}">
+                    <p class="text-xs font-medium text-fuchsia-600 dark:text-fuchsia-400 uppercase">${label}</p>
+                    <p class="text-base text-gray-800 dark:text-gray-200 font-semibold break-all">${displayValue}</p>
+                </div>
+            `;
+        };
+
+        /**
+         * 詳細モーダルを開く
+         * @param {Object} reservation - 表示するフィギュアデータ
+         */
+        const openDetailModal = (reservation) => {
+            // タイトルを設定 (アイコンはHTMLで固定)
+            detailModalTitleEl.innerHTML = `<i data-lucide="info" class="w-7 h-7 mr-2 text-indigo-500"></i> ${reservation.name}`;
+
+            // 詳細コンテンツのHTMLを生成
+            const contentHtml = `
+                ${reservation.imageUrl ? `
+                    <div class="text-center mb-4">
+                        <img src="${reservation.imageUrl}" alt="${reservation.name}" class="max-h-64 w-auto mx-auto rounded-xl shadow-lg object-contain border border-gray-200 dark:border-gray-600">
+                    </div>
+                ` : ''}
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                    ${createDetailItem('メーカー名/ブランド名', reservation.manufacturer)}
+                    ${createDetailItem('スケール情報', reservation.scale)}
+                    ${createDetailItem('予約日', formatDate(reservation.reservationDate))}
+                    ${createDetailItem('発売/引渡予定日', formatDate(reservation.releaseDate))}
+                    ${createDetailItem('購入店舗/予約サイト', reservation.shop)}
+                    ${createDetailItem('価格 (円)', reservation.price > 0 ? formatCurrency(reservation.price) : 'N/A')}
+                    ${createDetailItem('予約状況', reservation.status)}
+                    ${createDetailItem('注文番号/予約番号', reservation.orderNumber)}
+                    ${createDetailItem('備考欄', reservation.notes, true)}
+                </div>
+            `;
+
+            detailModalContentEl.innerHTML = contentHtml;
+            detailModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            lucide.createIcons(); // アイコンの再描画
+        };
+
+        /**
+         * 詳細モーダルを閉じる
+         */
+        const closeDetailModal = () => {
+            detailModal.classList.add('hidden');
+            // 予約モーダルやサイドバーが開いていなければスクロール禁止を解除
+            if (modal.classList.contains('hidden') && sidebarReservationsEl.classList.contains('-translate-x-full') && sidebarOwnedEl.classList.contains('-translate-x-full')) {
+                document.body.classList.remove('overflow-hidden');
+            }
+        };
+
+        // 🔼🔼🔼 詳細モーダル関連の関数 🔼🔼🔼
+
+        /**
+         * モーダルを開く
+         * @param {string} docId - 編集対象のドキュメントID (新規作成の場合はnull)
+         */
+        const openModal = (docId = null) => {
+            reservationForm.reset();
+            document.getElementById('doc-id').value = '';
+            
+            if (docId) {
+                modalTitleEl.textContent = '予約情報を編集';
+                const reservation = reservations.find(r => r.id === docId);
+                if (reservation) {
+                    document.getElementById('doc-id').value = reservation.id;
+                    document.getElementById('name').value = reservation.name || '';
+                    document.getElementById('imageUrl').value = reservation.imageUrl || '';
+                    document.getElementById('manufacturer').value = reservation.manufacturer || '';
+                    document.getElementById('scale').value = reservation.scale || '';
+                    document.getElementById('reservationDate').value = reservation.reservationDate || '';
+                    document.getElementById('releaseDate').value = reservation.releaseDate || '';
+                    document.getElementById('shop').value = reservation.shop || '';
+                    document.getElementById('price').value = reservation.price || 0;
+                    document.getElementById('status').value = reservation.status || '予約済み';
+                    document.getElementById('orderNumber').value = reservation.orderNumber || '';
+                    document.getElementById('notes').value = reservation.notes || '';
+                }
+            } else {
+                modalTitleEl.textContent = '新しい予約を追加';
+                document.getElementById('price').value = 0;
+                document.getElementById('status').value = '予約済み';
+                // 予約日を今日の日付に
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('reservationDate').value = today;
+            }
+            modal.classList.remove('hidden');
+            // モーダル表示時にbodyのスクロールを禁止
+            document.body.classList.add('overflow-hidden');
+        };
+
+        /**
+         * モーダルを閉じる
+         */
+        const closeModal = () => {
+            modal.classList.add('hidden');
+            // モーダル非表示時にbodyのスクロール禁止を解除
+            document.body.classList.remove('overflow-hidden');
+        };
+
+        /**
+         * 🌟 修正: 全てのビュー (予約、所持、サマリー) をレンダリングする
+         * メインリストのレンダリングを追加しました。
+         */
+        const renderAllViews = () => {
+            // 1. フィルタリング
+            const pendingReservations = reservations.filter(r => r.status !== STATUS_COMPLETED && r.status !== STATUS_CANCELLED);
+            const ownedReservations = reservations.filter(r => r.status === STATUS_COMPLETED);
+
+            // 2. 統計情報の更新
+            updateStats(currentView);
+
+            // 3. 予約ビューのレンダリング
+            const groupBy = groupBySelect.value;
+            // 🌟 タイトル更新
+            updateSummaryTitle('reservations', groupBy);
+            renderGroupSummary(
+                pendingReservations,
+                groupSummaryListEl,
+                groupBy,
+                '予約'
+            );
+            // 🔽 修正: メイン予約リストの描画を追加
+            renderReservationList(
+                pendingReservations,
+                reservationListEl,
+                noDataMessage,
+                groupBy,
+                '予約',
+                true // 予約リストは編集/削除ボタンを表示
+            );
+
+            // 4. 所持ビューのレンダリング
+            const groupByOwned = groupBySelectOwned.value;
+            // 🌟 タイトル更新
+            updateSummaryTitle('owned', groupByOwned);
+            renderGroupSummary(
+                ownedReservations,
+                groupSummaryListOwnedEl,
+                groupByOwned,
+                '所持'
+            );
+            // 🔽 修正: メイン所持リストの描画を追加
+            renderReservationList(
+                ownedReservations,
+                ownedListEl,
+                noOwnedDataMessage,
+                groupByOwned,
+                '所持',
+                false // 所持リストは編集/削除ボタンを非表示
+            );
+        };
+
+        /**
+         * タブを切り替える
+         * @param {'reservations'|'owned'} view - 切り替え先のビュー
+         * @param {boolean} updateHistory - 履歴を更新するかどうか
+         */
+        const switchTab = (view, updateHistory = true) => {
+            // 1. クラスの定義を再利用
+            const reservationsBtn = document.getElementById('tab-reservations');
+            const ownedBtn = document.getElementById('tab-owned');
+            const fixedReservationsBtn = document.getElementById('fixed-summary-btn-reservations');
+            const fixedOwnedBtn = document.getElementById('fixed-summary-btn-owned');
+            const mobileAddBtn = document.getElementById('open-modal-btn-mobile');
+
+            // 2. タブボタンの切り替え
+            if (view === 'reservations') {
+                reservationsBtn.classList.add(...ACTIVE_CLASSES);
+                reservationsBtn.classList.remove(...INACTIVE_CLASSES);
+                ownedBtn.classList.add(...INACTIVE_CLASSES);
+                ownedBtn.classList.remove(...ACTIVE_CLASSES);
+
+                // 3. ページの切り替え
+                reservationsPage.classList.remove('hidden');
+                ownedPage.classList.add('hidden');
+                currentView = 'reservations';
+                
+                // 🔽 修正: 固定ボタンの切り替えとモバイル予約追加ボタンの表示
+                if (fixedReservationsBtn && fixedOwnedBtn && mobileAddBtn) {
+                    fixedReservationsBtn.classList.remove('hidden');
+                    fixedOwnedBtn.classList.add('hidden');
+                    mobileAddBtn.classList.remove('hidden');
+                }
+            } else if (view === 'owned') {
+                ownedBtn.classList.add(...ACTIVE_CLASSES);
+                ownedBtn.classList.remove(...INACTIVE_CLASSES);
+                reservationsBtn.classList.add(...INACTIVE_CLASSES);
+                reservationsBtn.classList.remove(...ACTIVE_CLASSES);
+
+                // 3. ページの切り替え
+                ownedPage.classList.remove('hidden');
+                reservationsPage.classList.add('hidden');
+                currentView = 'owned';
+                
+                // 🔽 修正: 固定ボタンの切り替えとモバイル予約追加ボタンの表示
+                if (fixedReservationsBtn && fixedOwnedBtn && mobileAddBtn) {
+                    fixedReservationsBtn.classList.add('hidden');
+                    fixedOwnedBtn.classList.remove('hidden');
+                    // 所持リストからは直接予約は追加しないため、一旦非表示
+                    mobileAddBtn.classList.add('hidden'); 
+                }
+            }
+            
+            // 4. 統計情報の更新
+            updateStats(currentView);
+
+            // 5. 履歴の更新
+            if (updateHistory) {
+                window.history.pushState({ view: view }, '', `#${view}`);
+            }
+        };
+
+        /**
+         * ダークモードを切り替える
+         */
+        const toggleDarkMode = () => {
+            const isDarkMode = document.body.classList.toggle('dark');
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+
+            // アイコンの切り替え
+            const iconEl = toggleDarkModeBtn.querySelector('i');
+            if (isDarkMode) {
+                iconEl.setAttribute('data-lucide', 'sun');
+            } else {
+                iconEl.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons(); // アイコンの再描画
+        };
+
+        /**
+         * ダークモードの状態を初期化する
+         */
+        const initializeDarkMode = () => {
+            const darkModeState = localStorage.getItem('darkMode');
+            if (darkModeState === 'enabled' || (!darkModeState && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.body.classList.add('dark');
+                // アイコンを太陽にする
+                const iconEl = toggleDarkModeBtn.querySelector('i');
+                iconEl.setAttribute('data-lucide', 'sun');
+            }
+            lucide.createIcons();
+        };
+
+        /**
+         * サイドバー (グループサマリー) を開閉する
+         * @param {'reservations'|'owned'} view - 対象のビュー
+         * @param {boolean} open - trueで開く, falseで閉じる
+         */
+        const toggleSidebar = (view, open) => {
+            const sidebarEl = view === 'reservations' ? sidebarReservationsEl : sidebarOwnedEl;
+            const overlayEl = view === 'reservations' ? sidebarOverlayReservations : sidebarOverlayOwned;
+            
+            if (open) {
+                sidebarEl.classList.remove('-translate-x-full');
+                overlayEl.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            } else {
+                sidebarEl.classList.add('-translate-x-full');
+                overlayEl.classList.add('hidden');
+                // 予約モーダルや詳細モーダルが開いていなければスクロール禁止を解除
+                if (modal.classList.contains('hidden') && detailModal.classList.contains('hidden')) {
+                    document.body.classList.remove('overflow-hidden');
+                }
+            }
+        };
+
+        const openSidebar = (view) => toggleSidebar(view, true);
+        const closeSidebar = (view) => toggleSidebar(view, false);
+
+
+        // Firestoreのリアルタイムリスナー設定 (renderAllViewsを呼ぶように変更)
+        const setupFirestoreListener = () => {
+            const q = query(collection(db, COLLECTION_NAME), orderBy('releaseDate', 'asc'));
+
+            // 🔽 修正: リスナー設定時に初期ロード中と表示させる (HTMLはhidden)
+            loadingIndicator.classList.remove('hidden');
+            loadingIndicatorOwned.classList.remove('hidden');
+
+            // onSnapshotでリアルタイム更新を監視
+            const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                
+                // 🔽 修正: onSnapshot実行時に loadingIndicator.classList.remove('hidden'); の重複呼び出しを削除
+                // loadingIndicator.classList.remove('hidden');
+                // loadingIndicatorOwned.classList.remove('hidden');
+                
+                const newReservations = [];
+                querySnapshot.forEach((doc) => {
+                    newReservations.push({ id: doc.id, ...doc.data() });
+                });
+                
+                reservations = newReservations; // グローバルなreservationsを更新
+                renderAllViews();
+                
+                // 🔽 修正: データ処理後に読み込み中表示を非表示にする
+                loadingIndicator.classList.add('hidden');
+                loadingIndicatorOwned.classList.add('hidden');
+                
+            }, (error) => {
+                console.error("Firestoreリスニングエラー: ", error);
+                loadingIndicator.textContent = "データの読み込み中にエラーが発生しました。";
+                loadingIndicatorOwned.textContent = "データの読み込み中にエラーが発生しました。";
+            });
+
+            return unsubscribe; // リスナーを解除するための関数を返す
+        };
+
+        /**
+         * 予約情報の保存/更新
+         */
+        const saveReservation = async (e) => {
+            e.preventDefault();
+            loadingIndicator.classList.remove('hidden');
+            loadingIndicatorOwned.classList.remove('hidden');
+
+            const docId = document.getElementById('doc-id').value;
+            const name = document.getElementById('name').value;
+            const imageUrl = document.getElementById('imageUrl').value;
+            const manufacturer = document.getElementById('manufacturer').value;
+            const scale = document.getElementById('scale').value;
+            const reservationDate = document.getElementById('reservationDate').value;
+            const releaseDate = document.getElementById('releaseDate').value;
+            const shop = document.getElementById('shop').value;
+            const price = parseInt(document.getElementById('price').value) || 0;
+            const status = document.getElementById('status').value;
+            const orderNumber = document.getElementById('orderNumber').value;
+            const notes = document.getElementById('notes').value;
+
+            const data = {
+                name,
+                imageUrl,
+                manufacturer,
+                scale,
+                reservationDate,
+                releaseDate,
+                shop,
+                price,
+                status,
+                orderNumber,
+                notes,
+                updatedAt: serverTimestamp() // 最終更新日時
+            };
+
+            try {
+                if (docId) {
+                    // 更新
+                    await setDoc(doc(db, COLLECTION_NAME, docId), data, { merge: true });
+                    console.log("ドキュメントが更新されました:", docId);
+                } else {
+                    // 新規作成
+                    data.createdAt = serverTimestamp(); // 作成日時
+                    await addDoc(collection(db, COLLECTION_NAME), data);
+                    console.log("新しいドキュメントが追加されました");
+                }
+                closeModal(); // モーダルを閉じる
+
+            } catch (error) {
+                console.error("予約の保存エラー:", error);
+            } finally {
+                // リアルタイムリスナーが最終的にこれを処理するため、ここでは冗長だが、念のため非表示
+                loadingIndicator.classList.add('hidden');
+                loadingIndicatorOwned.classList.add('hidden');
+            }
+        };
+
+        // 予約の削除 (変更なし)
+        const deleteReservation = async () => {
+            if (!docIdToDelete) return;
+            loadingIndicator.classList.remove('hidden');
+            loadingIndicatorOwned.classList.remove('hidden');
+
+            try {
+                await deleteDoc(doc(db, COLLECTION_NAME, docIdToDelete));
+                console.log("ドキュメントが削除されました:", docIdToDelete);
+                deleteModal.classList.add('hidden');
+                docIdToDelete = null;
+            } catch (error) {
+                console.error("予約の削除エラー:", error);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                loadingIndicatorOwned.classList.add('hidden');
+            }
+        };
+
+        // イベントリスナーの追加 (編集/削除ボタンは動的に再追加)
+        const addEventListeners = () => {
+            // 編集ボタン
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.onclick = (e) => {
+                    e.stopPropagation(); // 詳細モーダルのイベントをブロック
+                    openModal(button.dataset.docId);
+                };
+            });
+
+            // 削除ボタン
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.onclick = (e) => {
+                    e.stopPropagation(); // 詳細モーダルのイベントをブロック
+                    docIdToDelete = button.dataset.docId;
+                    deleteItemNameEl.textContent = button.dataset.itemName;
+                    deleteModal.classList.remove('hidden');
+                };
+            });
+
+            // 🌟 🔽 新規追加: フィギュア詳細モーダルを開くイベントリスナー
+            document.querySelectorAll('.figure-card-clickable').forEach(card => {
+                card.onclick = (e) => {
+                    // 編集/削除ボタンをクリックした場合は詳細表示をブロックする
+                    if (e.target.closest('.edit-btn') || e.target.closest('.delete-btn')) {
+                        return;
+                    }
+
+                    const docId = card.dataset.docId;
+                    const reservation = reservations.find(r => r.id === docId);
+                    if (reservation) {
+                        openDetailModal(reservation);
+                    }
+                };
+            });
+        };
+
+        /**
+         * 初期化処理
+         */
+        const initializeApp = async () => {
+            // 1. ダークモードの初期化
+            initializeDarkMode();
+
+            // 2. Firebaseの初期化と匿名認証
+            try {
+                const firebaseApp = initializeApp(firebaseConfig);
+                db = getFirestore(firebaseApp);
+                auth = getAuth(firebaseApp);
+                await signInAnonymously(auth);
+                console.log("Firebaseに匿名で認証しました。");
+
+                // 接続成功メッセージを更新
+                authInfoFirebase.classList.remove('bg-yellow-100', 'border-yellow-500', 'text-yellow-800');
+                authInfoFirebase.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
+                authInfoFirebase.innerHTML = '<i data-lucide="cloud-check" class="w-5 h-5 mr-3 inline-block"></i>【接続済み】Firebase Firestoreに接続しました。';
+                lucide.createIcons();
+                
+                // 3. Firestoreリスナーの設定
+                setupFirestoreListener();
+
+            } catch (error) {
+                console.error("Firebaseの初期化または認証に失敗しました:", error);
+                authInfoFirebase.innerHTML = `<i data-lucide="cloud-off" class="w-5 h-5 mr-3 inline-block"></i>【エラー】Firebase接続エラー: ${error.message}`;
+                lucide.createIcons();
+            }
+
+            // 4. イベントリスナーの設定
+
+            // モーダル関連
+            openModalBtnDesktop.onclick = () => openModal();
+            openModalBtnMobile.onclick = () => openModal();
+            closeModalBtn.onclick = closeModal;
+            modalCloseIcon.onclick = closeModal;
+            reservationForm.onsubmit = saveReservation;
+
+            // 削除モーダル関連
+            cancelDeleteBtn.onclick = () => { deleteModal.classList.add('hidden'); docIdToDelete = null; };
+            confirmDeleteBtn.onclick = deleteReservation;
+
+            // 🌟 詳細モーダル関連
+            closeDetailModalBtn.onclick = closeDetailModal;
+            detailModalCloseIcon.onclick = closeDetailModal;
+
+            // ダークモード切り替え
+            toggleDarkModeBtn.onclick = toggleDarkMode;
+
+            // タブ切り替え
+            reservationsBtn.onclick = () => switchTab('reservations');
+            ownedBtn.onclick = () => switchTab('owned');
+
+            // 5. グループ化セレクタのイベントリスナー
+            if (groupBySelect) {
+                groupBySelect.onchange = () => {
+                    if (currentView === 'reservations') {
+                        renderAllViews();
+                    }
+                };
+            }
+            
+            // 🔽 所持フィギュアシートのグループ化セレクタのイベントリスナー
+            if (groupBySelectOwned) {
+                groupBySelectOwned.onchange = () => {
+                    if (currentView === 'owned') {
+                        renderAllViews();
+                    }
+                };
+            }
+            
+            // 🌟 7. 追加: オフキャンバスメニューのイベントリスナー (fixedボタンに対応するため、変数は既に更新済み)
+            // 予約ビュー
+            if (openSummaryBtnReservations) openSummaryBtnReservations.onclick = () => openSidebar('reservations'); // fixed-summary-btn-reservations に接続
+            if (closeSummaryBtnReservations) closeSummaryBtnReservations.onclick = () => closeSidebar('reservations');
+            if (sidebarOverlayReservations) sidebarOverlayReservations.onclick = () => closeSidebar('reservations');
+
+            // 所持ビュー
+            if (openSummaryBtnOwned) openSummaryBtnOwned.onclick = () => openSidebar('owned'); // fixed-summary-btn-owned に接続
+            if (closeSummaryBtnOwned) closeSummaryBtnOwned.onclick = () => closeSidebar('owned');
+            if (sidebarOverlayOwned) sidebarOverlayOwned.onclick = () => closeSidebar('owned');
+
+            // 🌟 8. 履歴APIによるタブ切り替えの初期化
+            const initialView = window.location.hash.substring(1) || 'reservations';
+            switchTab(initialView, false); // 履歴を更新せずに初期化
+
+            // 🌟 9. ブラウザの戻る/進むボタン対応
+            window.onpopstate = (event) => {
+                const view = event.state && event.state.view ? event.state.view : 'reservations';
+                switchTab(view, false);
+            };
+
+            // ... (その他の初期化処理が必要な場合はここに追加)
+        };
+
+        // アプリケーション開始
+        initializeApp();
+    </script>
+</body>
+</html>
