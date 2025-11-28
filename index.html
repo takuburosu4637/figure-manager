@@ -999,20 +999,30 @@
                 <div class="flex-grow">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-snug">${reservation.name}</h3>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-y-1 gap-x-4 text-sm text-gray-600 dark:text-gray-400">
-                        ${(viewTitle === '所持' || reservation.status === STATUS_COMPLETED) ? 
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-y-1 gap-x-4 text-sm text-gray-600 dark:text-gray-400">
+                        
+                        ${reservation.releaseDate ? 
                         `<p class="truncate sm:col-span-1 flex items-center">
-                            <i data-lucide="calendar" class="w-4 h-4 mr-2 text-indigo-500"></i>
-                            ${viewTitle === '予約' ? '引渡予定日' : '取得日'}: <span class="text-gray-900 dark:text-white font-semibold ml-1">${formatDate(reservation.releaseDate)}</span>
+                            <i data-lucide="${isCompleted ? 'package-check' : 'calendar'}" class="w-4 h-4 mr-2 ${isCompleted ? 'text-green-500' : 'text-fuchsia-500'}"></i>
+                            ${isCompleted ? '取得日' : '予定日'}: <span class="text-gray-900 dark:text-white font-semibold ml-1">${formatDate(reservation.releaseDate)}</span>
                         </p>` : ''}
-                        ${reservation.price ? 
+                        
+                        ${reservation.reservationDate ? 
+                        `<p class="truncate sm:col-span-1 flex items-center">
+                            <i data-lucide="calendar-plus" class="w-4 h-4 mr-2 text-indigo-500"></i>
+                            予約日: <span class="text-gray-900 dark:text-white font-semibold ml-1">${formatDate(reservation.reservationDate)}</span>
+                        </p>` : ''}
+
+                        ${reservation.price !== undefined && reservation.price !== null ? 
                         `<p class="truncate sm:col-span-1 flex items-center">
                             <i data-lucide="yen" class="w-4 h-4 mr-2 text-green-500"></i> 価格: <span class="text-gray-900 dark:text-white font-semibold ml-1">${formatCurrency(reservation.price)}</span>
                         </p>` : ''}
+                        
                         ${reservation.scale ? 
                         `<p class="truncate sm:col-span-1 flex items-center">
                             <i data-lucide="ruler" class="w-4 h-4 mr-2 text-orange-500"></i> スケール: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.scale}</span>
                         </p>` : ''}
+                        
                         ${reservation.shop ? 
                         `<p class="truncate sm:col-span-1 flex items-center">
                             <i data-lucide="store" class="w-4 h-4 mr-2 text-pink-500"></i> 店舗: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.shop}</span>
@@ -1071,8 +1081,8 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                     ${createDetailItem('メーカー名/ブランド名', reservation.manufacturer)}
                     ${createDetailItem('スケール情報', reservation.scale)}
-                    ${createDetailItem('予約日', reservation.reservationDate)}
-                    ${createDetailItem('発売/引渡予定日', reservation.releaseDate)}
+                    ${createDetailItem('予約日', formatDate(reservation.reservationDate))}
+                    ${createDetailItem('発売/引渡予定日', formatDate(reservation.releaseDate))}
                     ${createDetailItem('購入店舗/予約サイト', reservation.shop)}
                     ${createDetailItem('価格', formatCurrency(reservation.price))}
                     ${createDetailItem('注文番号/予約番号', reservation.orderNumber)}
