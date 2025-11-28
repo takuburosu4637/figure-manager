@@ -66,7 +66,8 @@
         }
         
         /* === ダークモードのスタイル === */
-        .dark body {
+        /* 🔽 修正: セレクタを .dark body から body.dark に変更し、背景色が正しく適用されるように修正 */
+        body.dark {
             background: #1f2937; /* 暗い背景 */
             color: #f3f4f6; /* 明るいテキスト */
         }
@@ -1328,10 +1329,15 @@
         const setupFirestoreListener = () => {
             const q = query(collection(db, COLLECTION_NAME), orderBy('releaseDate', 'asc'));
 
+            // 🔽 修正: リスナー設定時に初期ロード中と表示させる (HTMLはhidden)
+            loadingIndicator.classList.remove('hidden'); 
+            loadingIndicatorOwned.classList.remove('hidden');
+
             // onSnapshotでリアルタイム更新を監視
             const unsubscribe = onSnapshot(q, (querySnapshot) => {
-                loadingIndicator.classList.remove('hidden');
-                loadingIndicatorOwned.classList.remove('hidden');
+                // 🔽 修正: onSnapshot実行時に loadingIndicator.classList.remove('hidden'); の重複呼び出しを削除
+                // loadingIndicator.classList.remove('hidden'); 
+                // loadingIndicatorOwned.classList.remove('hidden');
                 
                 const newReservations = [];
                 querySnapshot.forEach((doc) => {
@@ -1344,10 +1350,17 @@
 
                 renderAllViews();
                 
+                // 🔽 修正: データ処理後に読み込み中表示を非表示にする
+                loadingIndicator.classList.add('hidden');
+                loadingIndicatorOwned.classList.add('hidden');
+                
             }, (error) => {
                 console.error("Firestoreリスニングエラー: ", error);
                 loadingIndicator.textContent = "データの読み込み中にエラーが発生しました。";
+                // エラー時はメッセージを表示するためhiddenを解除
                 loadingIndicator.classList.remove('hidden');
+                // ownedの方はメッセージがないので非表示に
+                loadingIndicatorOwned.classList.add('hidden'); 
             });
             return unsubscribe;
         };
@@ -1407,6 +1420,7 @@
                 console.error("予約の保存エラー:", error);
                 alert("データの保存中にエラーが発生しました。\n" + error.message);
             } finally {
+                // リアルタイムリスナーが最終的にこれを処理するため、ここでは冗長だが、念のため非表示
                 loadingIndicator.classList.add('hidden');
                 loadingIndicatorOwned.classList.add('hidden');
             }
