@@ -491,6 +491,25 @@
         </div>
     </div>
 
+    <div id="figure-detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 hidden p-4 scrollable-modal-container">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-8 relative transform transition-all duration-300 modal-content-wrapper">
+            <h2 id="detail-modal-title" class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2 flex items-center">
+                <i data-lucide="info" class="w-7 h-7 mr-2 text-indigo-500"></i>
+                フィギュア詳細情報
+            </h2>
+
+            <div id="detail-modal-content" class="space-y-4">
+                </div>
+            
+            <div class="flex justify-end pt-6">
+                 <button type="button" id="close-detail-modal-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition duration-150 font-medium">閉じる</button>
+            </div>
+
+            <button id="detail-modal-close-icon" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -547,58 +566,48 @@
         // 🌟 新規追加されたDOM要素と状態変数
         const tabReservationsBtn = document.getElementById('tab-reservations');
         const tabOwnedBtn = document.getElementById('tab-owned');
-        const pageReservationsEl = document.getElementById('page-reservations');
-        const pageOwnedEl = document.getElementById('page-owned');
-        const ownedListEl = document.getElementById('owned-list');
-        const groupSummaryListOwnedEl = document.getElementById('group-summary-list-owned');
-        const noOwnedDataMessage = document.getElementById('no-owned-data-message');
-        const loadingIndicatorOwned = document.getElementById('loading-indicator-owned');
-        
-        // 🔽 所持フィギュアシート用のグループ化セレクタを追加
+        const reservationsPage = document.getElementById('page-reservations');
+        const ownedPage = document.getElementById('page-owned');
         const groupBySelectOwned = document.getElementById('group-by-select-owned');
-        
-        // 🔽 新規追加: サマリータイトル要素
+        const groupSummaryListOwnedEl = document.getElementById('group-summary-list-owned');
+        const ownedListEl = document.getElementById('owned-list');
+        const loadingIndicatorOwned = document.getElementById('loading-indicator-owned');
+        const noOwnedDataMessage = document.getElementById('no-owned-data-message');
         const summaryTitleReservationsEl = document.getElementById('summary-title-reservations');
         const summaryTitleOwnedEl = document.getElementById('summary-title-owned');
-        
-        // 🌟 新規追加: オフキャンバスメニュー関連のDOM要素
-        const groupSummarySidebarReservations = document.getElementById('group-summary-sidebar');
-        // 🔽 変更: 固定ボタンのDOM要素を取得するように修正
         const openSummaryBtnReservations = document.getElementById('fixed-summary-btn-reservations');
         const closeSummaryBtnReservations = document.getElementById('close-summary-btn-reservations');
         const sidebarOverlayReservations = document.getElementById('sidebar-overlay-reservations');
-        
-        const groupSummarySidebarOwned = document.getElementById('group-summary-sidebar-owned');
-        // 🔽 変更: 固定ボタンのDOM要素を取得するように修正
+        const sidebarReservationsEl = document.getElementById('group-summary-sidebar');
         const openSummaryBtnOwned = document.getElementById('fixed-summary-btn-owned');
         const closeSummaryBtnOwned = document.getElementById('close-summary-btn-owned');
         const sidebarOverlayOwned = document.getElementById('sidebar-overlay-owned');
+        const sidebarOwnedEl = document.getElementById('group-summary-sidebar-owned');
+        const toggleDarkModeBtn = document.getElementById('toggle-dark-mode');
 
-        // 🔽 追加: 固定メニューコンテナ自体を取得
-        const mobileFixedMenu = document.getElementById('mobile-fixed-menu');
+        // 🌟 新規追加: 詳細モーダル関連
+        const detailModal = document.getElementById('figure-detail-modal');
+        const detailModalTitleEl = document.getElementById('detail-modal-title');
+        const detailModalContentEl = document.getElementById('detail-modal-content');
+        const closeDetailModalBtn = document.getElementById('close-detail-modal-btn');
+        const detailModalCloseIcon = document.getElementById('detail-modal-close-icon');
 
 
+        // 状態管理
         let currentView = 'reservations'; // 'reservations' or 'owned'
-
-        // 予約状況のカラーマッピング
-        const STATUS_COLORS = {
-            '予約済み': 'bg-blue-200 text-blue-800 border-blue-300',
-            '支払い済み（未発送）': 'bg-amber-200 text-amber-800 border-amber-300',
-            '発送連絡待ち': 'bg-purple-200 text-purple-800 border-purple-300',
-            'キャンセル': 'bg-gray-200 text-gray-500 border-gray-300',
-            '受け取り済み/完了': 'bg-green-200 text-green-800 border-green-300'
-        };
-        
         const STATUS_COMPLETED = '受け取り済み/完了';
         const STATUS_CANCELLED = 'キャンセル';
-        
-        // 🌟 変更なし: タブのアクティブ/非アクティブ状態を切り替えるクラス
-        // 背景色、文字色、シャドウなど、アクティブ時に適用するクラス
+        const STATUS_COLORS = {
+            '予約済み': 'bg-blue-100 text-blue-800 border-blue-300',
+            '支払い済み（未発送）': 'bg-indigo-100 text-indigo-800 border-indigo-300',
+            '発送連絡待ち': 'bg-purple-100 text-purple-800 border-purple-300',
+            'キャンセル': 'bg-red-100 text-red-800 border-red-300',
+            '受け取り済み/完了': 'bg-green-100 text-green-800 border-green-300',
+        };
         const ACTIVE_CLASSES = ['bg-fuchsia-600', 'text-white', 'shadow-md', 'dark:bg-fuchsia-700', 'dark:text-white'];
-        // 非アクティブ時に適用するクラス (文字色とホバー効果)
-        const INACTIVE_CLASSES = ['text-gray-500', 'hover:text-fuchsia-600', 'hover:bg-fuchsia-50', 'dark:text-gray-400', 'dark:hover:bg-gray-700', 'dark:hover:text-white'];
+        const INACTIVE_CLASSES = ['text-gray-500', 'hover:text-fuchsia-600', 'hover:bg-fuchsia-50', 'dark:text-gray-400', 'dark:hover:bg-gray-700', 'dark:hover:text-white', 'bg-fuchsia-600', 'text-white', 'shadow-md', 'dark:bg-fuchsia-700', 'dark:text-white'];
 
-        
+
         // 🔽 修正: グループ化キーと表示名のマッピング (サマリータイトル用に追加)
         const GROUP_BY_NAMES = {
             'none': '全アイテム',
@@ -614,13 +623,12 @@
         const getGroupByDisplayName = (groupBy) => {
             return GROUP_BY_NAMES[groupBy] || GROUP_BY_NAMES['none'];
         };
-        
+
         /**
          * 🌟 修正: グループサマリーのタイトルを更新する関数
          */
         const updateSummaryTitle = (view, groupBy) => {
             const baseName = GROUP_BY_NAMES[groupBy] || 'グループ';
-            
             let titleText;
             if (groupBy === 'none') {
                 // グループ化しない場合は、HTMLで設定されたデフォルトタイトルを維持 (例: グループサマリー)
@@ -629,30 +637,22 @@
                 // ご要望に基づき、グループ名のみに変更
                 titleText = baseName;
             }
-            
             const titleEl = view === 'reservations' ? summaryTitleReservationsEl : summaryTitleOwnedEl;
-            
             // アイコンを保持
             const iconHtml = `<i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>`;
-            
             if (titleEl) {
                 titleEl.innerHTML = iconHtml + titleText;
                 lucide.createIcons(); // アイコンの再描画
             }
         };
 
-
         /**
          * 価格を日本円の形式（¥1,234）にフォーマットする
          */
         const formatCurrency = (amount) => {
-            return new Intl.NumberFormat('ja-JP', {
-                style: 'currency',
-                currency: 'JPY',
-                minimumFractionDigits: 0
-            }).format(amount);
+            return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 0 }).format(amount);
         };
-        
+
         /**
          * 統計情報カードのHTMLを生成するヘルパー関数
          * 🔽 修正: アイコンと colorClass の引数を削除
@@ -674,52 +674,32 @@
         const updateStats = (view) => {
             const thisYear = new Date().getFullYear();
             const thisMonth = new Date().getMonth(); // 0-11
-            
-            if (view === 'reservations') {
-                // --- 予約ビューの統計 (未完了のみ) ---
-                const pendingReservationsData = reservations.filter(r => r.status !== STATUS_COMPLETED && r.status !== STATUS_CANCELLED);
-                
-                let totalReserved = 0; // 支払い予定総額
-                let upcomingPaymentTotal = 0; // 今月・来月支払予定額
-                let pendingReservations = 0; // 未完了の予約件数 (予約/支払い済み/発送待ち)
 
-                pendingReservationsData.forEach(r => {
-                    const price = r.price || 0;
+            if (view === 'reservations') {
+                // --- 予約ビューの統計 (既存ロジックを修正) ---
+                const pendingReservations = reservations.filter(r => r.status !== STATUS_COMPLETED && r.status !== STATUS_CANCELLED);
+                const totalReservations = reservations.length;
+                let totalReserved = 0;
+                let upcomingPaymentTotal = 0;
+
+                pendingReservations.forEach(r => {
+                    totalReserved += r.price || 0;
                     const releaseDate = r.releaseDate ? new Date(r.releaseDate) : null;
-                    const status = r.status;
-                    
-                    // 支払い予定総額の計算 (受け取り済み、キャンセル以外)
-                    totalReserved += price;
-                    
-                    // 今月・来月発売予定の支払い合計
                     if (releaseDate) {
                         const releaseMonth = releaseDate.getMonth();
                         const releaseYear = releaseDate.getFullYear();
-                        
-                        const nextMonthDate = new Date();
-                        nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-                        const nextMonth = nextMonthDate.getMonth();
-                        const nextMonthYear = nextMonthDate.getFullYear();
-                        
-                        const isThisMonth = releaseYear === thisYear && releaseMonth === thisMonth;
-                        const isNextMonth = releaseYear === nextMonthYear && releaseMonth === nextMonth;
-                        
-                        if (isThisMonth || isNextMonth) {
-                            upcomingPaymentTotal += price;
+                        // 今月 (currentMonth) または来月 (currentMonth + 1) の発売予定
+                        if (releaseYear === thisYear && (releaseMonth === thisMonth || releaseMonth === (thisMonth + 1) % 12) ||
+                            (releaseYear === thisYear + 1 && thisMonth === 11 && releaseMonth === 0)) {
+                            upcomingPaymentTotal += r.price || 0;
                         }
-                    } 
-                    
-                    // 未完了の予約件数
-                    if (status === '予約済み' || status === '支払い済み（未発送）' || status === '発送連絡待ち') {
-                        pendingReservations++;
                     }
                 });
 
-                const totalReservations = reservations.length;
                 // 🔽 修正: アイコンと colorClass の引数を削除
                 statsEl.innerHTML = `
                     ${createStatCard('予約総件数 (全データ)', totalReservations)}
-                    ${createStatCard('未完了件数', pendingReservations)}
+                    ${createStatCard('未完了件数', pendingReservations.length)}
                     ${createStatCard('支払い予定総額', formatCurrency(totalReserved))}
                     ${createStatCard('今月・来月支払予定額', formatCurrency(upcomingPaymentTotal))}
                 `;
@@ -727,14 +707,12 @@
             } else if (view === 'owned') {
                 // --- 所持ビューの統計 (新規ロジック) ---
                 const ownedReservations = reservations.filter(r => r.status === STATUS_COMPLETED);
-                
                 let totalOwnedPrice = 0;
                 let thisYearOwnedCount = 0;
-                
+
                 ownedReservations.forEach(r => {
                     totalOwnedPrice += r.price || 0;
                     const releaseDate = r.releaseDate ? new Date(r.releaseDate) : null; // releaseDateをここでは「取得日」と見なす
-                    
                     if (releaseDate && releaseDate.getFullYear() === thisYear) {
                         thisYearOwnedCount++;
                     }
@@ -751,17 +729,18 @@
                     ${createStatCard('平均単価', totalOwnedCount > 0 ? formatCurrency(Math.round(totalOwnedPrice / totalOwnedCount)) : formatCurrency(0))}
                 `;
             }
-            
+
             // 🔽 修正: アイコンがないため、この行は削除またはそのまま残しても影響なし
             lucide.createIcons();
         };
+
 
         /**
          * 🌟 グループサマリーリストを描画する
          */
         const renderGroupSummary = (reservationsToRender, groupSummaryTargetEl, groupBy, viewTitle) => {
             groupSummaryTargetEl.innerHTML = '';
-            
+
             if (reservationsToRender.length === 0) {
                 groupSummaryTargetEl.innerHTML = `
                     <p class="text-gray-500 text-sm p-2">該当するアイテムはありません。</p>
@@ -771,7 +750,6 @@
 
             // グループ化のロジック
             let groupedReservations = {};
-            
             if (groupBy === 'none') {
                 // キーは「全未完了アイテム」または「全所持アイテム」
                 const totalViewTitle = viewTitle === '予約' ? '全予約フィギュア' : '全所持フィギュア';
@@ -784,13 +762,14 @@
                         const date = r.releaseDate;
                         groupKey = date ? date.substring(0, 7) + ' ' + (viewTitle === '予約' ? '発売予定' : '購入/受取') : '日付未定';
                     } else if (groupBy === 'manufacturer') {
-                        groupKey = r.manufacturer && r.manufacturer.trim() !== '' ? r.manufacturer : 'メーカー未定';
+                        groupKey = r.manufacturer && r.manufacturer.trim() !== '' ? r.manufacturer : 'メーカー不明';
                     } else if (groupBy === 'shop') {
-                        groupKey = r.shop && r.shop.trim() !== '' ? r.shop : '店舗未定';
+                        groupKey = r.shop && r.shop.trim() !== '' ? r.shop : '店舗不明';
                     } else if (groupBy === 'scale') {
-                        groupKey = r.scale && r.scale.trim() !== '' ? 'スケール：' + r.scale : 'スケール未定';
+                        groupKey = r.scale && r.scale.trim() !== '' ? r.scale : 'スケール不明';
+                    } else {
+                        return;
                     }
-
                     if (!groupedReservations[groupKey]) {
                         groupedReservations[groupKey] = [];
                     }
@@ -798,35 +777,32 @@
                 });
             }
 
-            // ソートロジックはグループ化ありの場合と同じでOK
+            // ソートロジック
             const sortedGroupKeys = Object.keys(groupedReservations).sort((a, b) => {
                 if (groupBy === 'releaseDateMonth') {
+                    // 日付未定を最後に
                     if (a.includes('未定')) return 1;
                     if (b.includes('未定')) return -1;
                     return a.localeCompare(b);
                 }
-                // 'none'の場合はキーが一つなのでソート不要
+                if (groupBy === 'none') return 0;
+                // それ以外はキーの文字列でソート
                 return a.localeCompare(b);
             });
 
 
-            // グループ化ありの場合
-            sortedGroupKeys.forEach((groupKey) => {
+            // リストに描画
+            sortedGroupKeys.forEach(groupKey => {
                 const reservationsInGroup = groupedReservations[groupKey];
                 const count = reservationsInGroup.length;
+                
                 let displayKey = groupKey;
-                
                 if (groupBy === 'releaseDateMonth' && groupKey.includes(' ')) {
-                    const [year, month] = groupKey.split(' ')[0].split('-');
-                    displayKey = `${year}年${month}月 ${groupKey.split(' ')[1]}`;
-                }
-                
-                if (groupBy === 'none') {
-                    // キーは「全未完了アイテム」または「全所持アイテム」
-                    displayKey = groupKey;
+                    const [datePart, titlePart] = groupKey.split(' ');
+                    const [year, month] = datePart.split('-');
+                    displayKey = `${year}年${month}月 ${titlePart}`;
                 }
 
-                // グループサマリーのコンテナ
                 const groupContainer = document.createElement('div');
                 // 🔽 修正: ボーダーの色をfuchsia-600に
                 groupContainer.className = 'group-summary-item border border-fuchsia-600 dark:border-fuchsia-400 rounded-xl shadow-sm hover:shadow-md transition duration-200';
@@ -842,7 +818,6 @@
                         <i data-lucide="chevron-down" class="summary-chevron w-4 h-4 ml-2 transition-transform duration-200"></i>
                     </span>
                 `;
-
                 groupContainer.appendChild(header);
 
                 // フィギュアリスト
@@ -873,10 +848,10 @@
                     figureItem.onclick = scrollHandler;
                     figureList.appendChild(figureItem);
                 });
-                
+
                 groupContainer.appendChild(figureList);
                 groupSummaryTargetEl.appendChild(groupContainer);
-
+                
                 // 🌟 ヘッダーのクリックイベントを、リストの表示をトグルする処理に変更
                 const chevron = header.querySelector('.summary-chevron');
                 // 🔽 修正: ヘッダーのクリックイベントのクラス操作を元に戻す
@@ -884,59 +859,56 @@
                     figureList.classList.toggle('hidden');
                     // リストの表示状態に合わせてヘッダーの角丸とシェブロンを調整
                     if (figureList.classList.contains('hidden')) {
-                        // 閉じている状態: すべて角丸にし、シェブロンは下向き
-                        header.classList.add('rounded-xl');
-                        header.classList.remove('rounded-t-xl');
-                        chevron.classList.remove('rotate-180');
+                         header.classList.add('rounded-xl');
+                         header.classList.remove('rounded-t-xl');
+                         chevron.style.transform = 'rotate(0deg)';
                     } else {
-                        // 開いている状態: 下部を角丸なしにし、シェブロンは上向き
-                        header.classList.remove('rounded-xl');
-                        header.classList.add('rounded-t-xl');
-                        chevron.classList.add('rotate-180');
+                         header.classList.remove('rounded-xl');
+                         header.classList.add('rounded-t-xl');
+                         chevron.style.transform = 'rotate(180deg)';
                     }
                 };
             });
-            // --- 🔼 修正ここまで 🔼 ---
+
             lucide.createIcons();
         };
 
+
         /**
-         * 🌟 汎用的な予約リスト描画関数
+         * 🌟 メインのフィギュアリストを描画する
          */
-        const renderReservationList = (
-            reservationsToRender,
-            listTargetEl,
-            noDataTargetEl,
-            groupBy,
-            viewTitle,
-            showEditAndDelete = true
-        ) => {
-            listTargetEl.innerHTML = '';
+        const renderReservationList = (reservationsToRender, listTargetEl, noDataMessageEl, groupBy, viewTitle, showEditAndDelete) => {
+            listTargetEl.innerHTML = ''; // リストをクリア
+            
+            // データなしメッセージの表示/非表示を切り替え
             if (reservationsToRender.length === 0) {
-                noDataTargetEl.classList.remove('hidden');
+                noDataMessageEl.classList.remove('hidden');
                 return;
             } else {
-                noDataTargetEl.classList.add('hidden');
+                noDataMessageEl.classList.add('hidden');
             }
 
-            // グループ化のロジック (既存のものを再利用)
+            // グループ化のロジック
             let groupedReservations = {};
             if (groupBy === 'none') {
-                groupedReservations['全アイテム'] = reservationsToRender;
+                // グループ化しない場合は全てを一つのグループに入れる
+                groupedReservations['ALL'] = reservationsToRender;
             } else {
+                // グループ化のロジック (既存のものを再利用)
                 reservationsToRender.forEach(r => {
                     let groupKey;
                     if (groupBy === 'releaseDateMonth') {
                         const date = r.releaseDate;
                         groupKey = date ? date.substring(0, 7) + ' ' + (viewTitle === '予約' ? '発売予定' : '購入/受取') : '日付未定';
                     } else if (groupBy === 'manufacturer') {
-                        groupKey = r.manufacturer && r.manufacturer.trim() !== '' ? r.manufacturer : 'メーカー未定';
+                        groupKey = r.manufacturer && r.manufacturer.trim() !== '' ? r.manufacturer : 'メーカー不明';
                     } else if (groupBy === 'shop') {
-                        groupKey = r.shop && r.shop.trim() !== '' ? r.shop : '店舗未定';
+                        groupKey = r.shop && r.shop.trim() !== '' ? r.shop : '店舗不明';
                     } else if (groupBy === 'scale') {
-                        groupKey = r.scale && r.scale.trim() !== '' ? 'スケール：' + r.scale : 'スケール未定';
+                        groupKey = r.scale && r.scale.trim() !== '' ? r.scale : 'スケール不明';
+                    } else {
+                        return;
                     }
-
                     if (!groupedReservations[groupKey]) {
                         groupedReservations[groupKey] = [];
                     }
@@ -954,20 +926,17 @@
                 if (groupBy === 'none') return 0;
                 return a.localeCompare(b);
             });
-            
+
             // リストに描画
             sortedGroupKeys.forEach(groupKey => {
                 const reservationsInGroup = groupedReservations[groupKey];
-                
                 if (groupBy !== 'none') {
                     const groupHeader = document.createElement('h3');
                     let displayKey = groupKey;
-                    
                     if (groupBy === 'releaseDateMonth' && groupKey.includes(' ')) {
                         const [year, month] = groupKey.split(' ')[0].split('-');
                         displayKey = `${year}年${month}月 ${groupKey.split(' ')[1]}`;
                     }
-                    
                     groupHeader.className = 'group-header';
                     groupHeader.innerHTML = `${displayKey} <span class="text-sm ml-2 font-normal">(${reservationsInGroup.length}件)</span>`;
                     listTargetEl.appendChild(groupHeader);
@@ -983,6 +952,7 @@
             lucide.createIcons();
         };
 
+
         /**
          * 予約フィギュアカードのHTML要素を生成するヘルパー関数
          */
@@ -994,54 +964,57 @@
             const card = document.createElement('div');
             // 🔽 修正: ライトモードでの背景色を白 (#ffffff) に変更してコントラストを確保。
             const cardClass = `p-4 border border-gray-200 rounded-xl shadow-md bg-white transition duration-200 flex space-x-4 items-center ${viewTitle === '予約' && isCompleted ? 'opacity-70 bg-gray-50 dark:bg-gray-700' : 'hover:shadow-lg hover:border-fuchsia-300 dark:bg-gray-800 dark:border-gray-700 dark:hover:border-fuchsia-500'}`;
+            
             card.className = cardClass;
             // 🌟 個別フィギュアカードのIDを付与
             card.id = `item-${reservation.id}`; // スクロールターゲットID
+            // 🔽 新規追加: クリック可能にするためのクラスとIDを追加
+            card.dataset.docId = reservation.id; // データIDを追加
+            card.classList.add('figure-card-clickable', 'cursor-pointer'); // クリック可能なスタイルとカーソルを追加
 
             const actionButtons = showEditAndDelete ? `
                 <div class="flex space-x-2 flex-shrink-0">
-                    <button class="edit-btn text-indigo-500 hover:text-indigo-700 p-1 rounded-full hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900 transition" data-id="${reservation.id}">
+                    <button class="edit-btn text-indigo-500 hover:text-indigo-700 p-1 rounded-full hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-gray-600 transition" data-doc-id="${reservation.id}" aria-label="編集">
                         <i data-lucide="square-pen" class="w-5 h-5"></i>
                     </button>
-                    <button class="delete-btn text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900 transition" data-id="${reservation.id}" data-name="${reservation.name}">
+                    <button class="delete-btn text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-600 transition" data-doc-id="${reservation.id}" data-item-name="${reservation.name}" aria-label="削除">
                         <i data-lucide="trash-2" class="w-5 h-5"></i>
                     </button>
                 </div>
             ` : '';
 
             card.innerHTML = `
-                <div class="figure-image-wrapper">
-                    <img src="${imageUrl}" alt="${reservation.name}" class="figure-image">
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="text-xl font-bold text-gray-900 dark:text-white truncate">${reservation.name}</h3>
+                <img src="${imageUrl}" alt="${reservation.name}" class="figure-image figure-image-clickable" loading="lazy">
+                
+                <div class="flex-grow min-w-0">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 truncate">${reservation.name}</h3>
                         ${actionButtons}
                     </div>
-                    <div class="text-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 text-gray-600 dark:text-gray-300">
-                        <p class="font-medium flex items-center sm:col-span-1">
-                            <i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-indigo-500"></i>
-                            ${viewTitle === '予約' ? '発売予定' : '受取日'}: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.releaseDate || 'N/A'}</span>
-                        </p>
-                        <p class="flex items-center sm:col-span-1">
-                            <i data-lucide="factory" class="w-4 h-4 mr-2 text-amber-500"></i>
-                            メーカー: <span class="text-gray-900 dark:text-white font-semibold ml-1 truncate">${reservation.manufacturer || 'N/A'}</span>
-                        </p>
-                        <p class="flex items-center sm:col-span-1">
-                            <i data-lucide="tag" class="w-4 h-4 mr-2 text-green-500"></i>
-                            価格: <span class="text-gray-900 dark:text-white font-semibold ml-1">${formatCurrency(reservation.price)}</span>
-                        </p>
-                        ${reservation.scale ? `
-                        <p class="flex items-center sm:col-span-1">
-                            <i data-lucide="ruler" class="w-4 h-4 mr-2 text-purple-500"></i>
-                            スケール: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.scale}</span>
-                        </p>` : ''}
-                        ${reservation.shop ? `
-                        <p class="flex items-center sm:col-span-1">
-                            <i data-lucide="store" class="w-4 h-4 mr-2 text-pink-500"></i>
-                            店舗: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.shop}</span>
-                        </p>` : ''}
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-y-1 gap-x-3 text-sm text-gray-600 dark:text-gray-400">
+                        ${reservation.releaseDate ? 
+                            `<p class="truncate sm:col-span-1">
+                                <i data-lucide="calendar" class="w-4 h-4 mr-2 text-indigo-500"></i> 
+                                ${viewTitle === '予約' ? '予定' : '取得'}: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.releaseDate}</span>
+                            </p>` : ''}
+                        ${reservation.price > 0 ? 
+                            `<p class="truncate sm:col-span-1">
+                                <i data-lucide="yen" class="w-4 h-4 mr-2 text-green-500"></i> 
+                                価格: <span class="text-gray-900 dark:text-white font-semibold ml-1">${formatCurrency(reservation.price)}</span>
+                            </p>` : ''}
+                        ${reservation.scale ? 
+                            `<p class="truncate sm:col-span-1">
+                                <i data-lucide="ruler" class="w-4 h-4 mr-2 text-orange-500"></i> 
+                                スケール: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.scale}</span>
+                            </p>` : ''}
+                        ${reservation.shop ? 
+                            `<p class="truncate sm:col-span-1">
+                                <i data-lucide="store" class="w-4 h-4 mr-2 text-pink-500"></i> 
+                                店舗: <span class="text-gray-900 dark:text-white font-semibold ml-1">${reservation.shop}</span>
+                            </p>` : ''}
                     </div>
+
                     <div class="mt-3 flex flex-wrap gap-2 items-center">
                         <span class="px-3 py-1 text-xs font-semibold rounded-full border ${statusColorClass}">
                             ${reservation.status}
@@ -1049,9 +1022,75 @@
                     </div>
                 </div>
             `;
-
             return card;
         };
+
+
+        // 🔽🔽🔽 新規追加: 詳細モーダル関連の関数 🔽🔽🔽
+
+        /**
+         * 詳細モーダル内の個別の表示アイテムを生成するヘルパー
+         */
+        const createDetailItem = (label, value, isFullWidth = false) => {
+            const displayValue = value && value.trim() !== '' ? value : 'N/A';
+            return `
+                <div class="${isFullWidth ? 'sm:col-span-2' : 'sm:col-span-1'}">
+                    <p class="text-xs font-medium text-fuchsia-600 dark:text-fuchsia-400 uppercase">${label}</p>
+                    <p class="text-base text-gray-800 dark:text-gray-200 font-semibold break-all">${displayValue}</p>
+                </div>
+            `;
+        };
+
+        /**
+         * 詳細モーダルを開く
+         * @param {Object} reservation - 表示するフィギュアデータ
+         */
+        const openDetailModal = (reservation) => {
+            // タイトルを設定 (アイコンはHTMLで固定)
+            detailModalTitleEl.innerHTML = `<i data-lucide="info" class="w-7 h-7 mr-2 text-indigo-500"></i> ${reservation.name}`;
+
+            // 詳細コンテンツのHTMLを生成
+            const contentHtml = `
+                ${reservation.imageUrl ? `
+                    <div class="text-center mb-4">
+                        <img src="${reservation.imageUrl}" alt="${reservation.name}" class="max-h-64 w-auto mx-auto rounded-xl shadow-lg object-contain border border-gray-200 dark:border-gray-600">
+                    </div>
+                ` : ''}
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                    ${createDetailItem('メーカー名/ブランド名', reservation.manufacturer)}
+                    ${createDetailItem('スケール情報', reservation.scale)}
+                    ${createDetailItem('予約日', reservation.reservationDate)}
+                    ${createDetailItem('発売/引渡予定日', reservation.releaseDate)}
+                    ${createDetailItem('購入店舗/予約サイト', reservation.shop)}
+                    ${createDetailItem('価格 (円)', formatCurrency(reservation.price))}
+                    ${createDetailItem('注文番号/予約番号', reservation.orderNumber)}
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    ${createDetailItem('予約状況', reservation.status, true)}
+                    ${createDetailItem('備考欄', reservation.notes, true)}
+                </div>
+            `;
+            
+            detailModalContentEl.innerHTML = contentHtml;
+            lucide.createIcons();
+            detailModal.classList.remove('hidden');
+            // モーダル表示時にbodyのスクロールを禁止
+            document.body.classList.add('overflow-hidden');
+        };
+
+        /**
+         * 詳細モーダルを閉じる
+         */
+        const closeDetailModal = () => {
+            detailModal.classList.add('hidden');
+            // モーダル非表示時にbodyのスクロール禁止を解除
+            document.body.classList.remove('overflow-hidden');
+        };
+
+        // 🔼🔼🔼 新規追加: 詳細モーダル関連の関数 🔼🔼🔼
+
 
         /**
          * モーダルを開く
@@ -1060,7 +1099,7 @@
         const openModal = (docId = null) => {
             form.reset();
             document.getElementById('doc-id').value = docId;
-            
+
             if (docId) {
                 modalTitle.textContent = '予約情報を編集';
                 const reservation = reservations.find(r => r.id === docId);
@@ -1109,18 +1148,18 @@
             // 1. フィルタリング
             const pendingReservations = reservations.filter(r => r.status !== STATUS_COMPLETED && r.status !== STATUS_CANCELLED);
             const ownedReservations = reservations.filter(r => r.status === STATUS_COMPLETED);
-            
+
             // 2. 統計情報の更新
             updateStats(currentView);
-            
+
             // 3. 予約ビューのレンダリング
             const groupBy = groupBySelect.value;
             // 🌟 タイトル更新
             updateSummaryTitle('reservations', groupBy);
             renderGroupSummary(
-                pendingReservations,
-                groupSummaryListEl,
-                groupBy,
+                pendingReservations, 
+                groupSummaryListEl, 
+                groupBy, 
                 '予約'
             );
             // 🔽 修正: メイン予約リストの描画を追加
@@ -1130,7 +1169,7 @@
                 noDataMessage,
                 groupBy,
                 '予約',
-                true 
+                true // 予約リストは編集/削除ボタンを表示
             );
 
             // 4. 所持ビューのレンダリング
@@ -1138,53 +1177,152 @@
             // 🌟 タイトル更新
             updateSummaryTitle('owned', groupByOwned);
             renderGroupSummary(
-                ownedReservations,
-                groupSummaryListOwnedEl,
-                // 🔽 予約シートと同様に、groupByOwnedを使用するように修正
-                groupByOwned,
+                ownedReservations, 
+                groupSummaryListOwnedEl, 
+                groupByOwned, 
                 '所持'
             );
-             // 🔽 修正: メイン所持リストの描画を追加
+            // 🔽 修正: メイン所持リストの描画を追加
             renderReservationList(
                 ownedReservations,
                 ownedListEl,
                 noOwnedDataMessage,
                 groupByOwned,
                 '所持',
-                true 
+                false // 所持リストは編集/削除ボタンを非表示
             );
-
-            // 5. 読み込みインジケーターを非表示に
-            loadingIndicator.classList.add('hidden');
-            loadingIndicatorOwned.classList.add('hidden');
-
-            // 6. 現在のアクティブタブの内容を表示/非表示に (onSnapshot後に呼ばれるため)
-            switchTab(currentView, false);
         };
 
-        // 🌟 新規追加: サイドバーの表示/非表示を切り替える関数
-        const toggleSidebar = (view, isOpen) => {
-            const sidebar = view === 'reservations' ? groupSummarySidebarReservations : groupSummarySidebarOwned;
-            const overlay = view === 'reservations' ? sidebarOverlayReservations : sidebarOverlayOwned;
-            
-            if (!sidebar || !overlay) return;
 
-            if (isOpen) {
-                // Open
-                sidebar.classList.remove('-translate-x-full');
-                sidebar.classList.add('translate-x-0');
-                overlay.classList.remove('hidden');
-                document.body.classList.add('overflow-hidden'); // Prevent scrolling body when menu is open
+        /**
+         * タブを切り替える
+         * @param {'reservations'|'owned'} view - 切り替え先のビュー
+         * @param {boolean} updateHistory - 履歴を更新するかどうか
+         */
+        const switchTab = (view, updateHistory = true) => {
+            // 1. クラスの定義を再利用
+            const reservationsBtn = document.getElementById('tab-reservations');
+            const ownedBtn = document.getElementById('tab-owned');
+            const fixedReservationsBtn = document.getElementById('fixed-summary-btn-reservations');
+            const fixedOwnedBtn = document.getElementById('fixed-summary-btn-owned');
+            const mobileAddBtn = document.getElementById('open-modal-btn-mobile');
+
+            // 2. タブボタンの切り替え
+            if (view === 'reservations') {
+                reservationsBtn.classList.add(...ACTIVE_CLASSES);
+                reservationsBtn.classList.remove(...INACTIVE_CLASSES);
+                ownedBtn.classList.add(...INACTIVE_CLASSES);
+                ownedBtn.classList.remove(...ACTIVE_CLASSES);
+
+                // 3. ページの切り替え
+                reservationsPage.classList.remove('hidden');
+                ownedPage.classList.add('hidden');
+                currentView = 'reservations';
+                // 🔽 修正: 固定ボタンの切り替えとモバイル予約追加ボタンの表示
+                if (fixedReservationsBtn && fixedOwnedBtn && mobileAddBtn) {
+                    fixedReservationsBtn.classList.remove('hidden');
+                    fixedOwnedBtn.classList.add('hidden');
+                    mobileAddBtn.classList.remove('hidden'); // 予約ビューでのみ表示
+                }
+
+            } else if (view === 'owned') {
+                ownedBtn.classList.add(...ACTIVE_CLASSES);
+                ownedBtn.classList.remove(...INACTIVE_CLASSES);
+                reservationsBtn.classList.add(...INACTIVE_CLASSES);
+                reservationsBtn.classList.remove(...ACTIVE_CLASSES);
+
+                // 3. ページの切り替え
+                reservationsPage.classList.add('hidden');
+                ownedPage.classList.remove('hidden');
+                currentView = 'owned';
+                // 🔽 修正: 固定ボタンの切り替えとモバイル予約追加ボタンの非表示
+                if (fixedReservationsBtn && fixedOwnedBtn && mobileAddBtn) {
+                    fixedReservationsBtn.classList.add('hidden');
+                    fixedOwnedBtn.classList.remove('hidden');
+                    mobileAddBtn.classList.add('hidden'); // 所持ビューでは非表示
+                }
             } else {
-                // Close
-                sidebar.classList.remove('translate-x-0');
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-                document.body.classList.remove('overflow-hidden');
+                return; // 無効なビュー
+            }
+
+            // 4. 統計情報の更新
+            updateStats(currentView);
+
+            // 5. 履歴の更新 (後方ボタン対応)
+            if (updateHistory) {
+                history.pushState({ view: currentView }, '', `#${currentView}`);
+            }
+
+            // 🌟 修正: タブ切り替え時にもグループサマリーのタイトルを更新
+            const groupBySelectEl = view === 'reservations' ? groupBySelect : groupBySelectOwned;
+            updateSummaryTitle(view, groupBySelectEl.value);
+
+            // 🌟 修正: サイドバーを閉じる (モバイル対応)
+            closeSidebar(view === 'reservations' ? 'owned' : 'reservations'); // 念のため反対側を閉じる
+            closeSidebar(view); // 現在のビューのサイドバーを閉じる
+            
+            // 🌟 修正: 現在のビューのリストをレンダリング（既にrenderAllViewsで全て処理されるが、念のため）
+            // renderAllViews(); // onSnapshotが呼ぶため、ここでは冗長になる可能性あり。
+        };
+
+        /**
+         * ダークモードをトグルする
+         */
+        const toggleDarkMode = () => {
+            document.body.classList.toggle('dark');
+            const isDarkMode = document.body.classList.contains('dark');
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+            // アイコンの切り替え (月/太陽)
+            const iconEl = toggleDarkModeBtn.querySelector('i');
+            if (isDarkMode) {
+                iconEl.setAttribute('data-lucide', 'sun');
+            } else {
+                iconEl.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons(); // アイコンの再描画
+        };
+
+        /**
+         * ダークモードの状態を初期化する
+         */
+        const initializeDarkMode = () => {
+            const darkModeState = localStorage.getItem('darkMode');
+            if (darkModeState === 'enabled' || (!darkModeState && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.body.classList.add('dark');
+                // アイコンを太陽にする
+                const iconEl = toggleDarkModeBtn.querySelector('i');
+                iconEl.setAttribute('data-lucide', 'sun');
+            }
+            lucide.createIcons();
+        };
+
+        /**
+         * サイドバー (グループサマリー) を開閉する
+         * @param {'reservations'|'owned'} view - 対象のビュー
+         * @param {boolean} open - trueで開く, falseで閉じる
+         */
+        const toggleSidebar = (view, open) => {
+            const sidebarEl = view === 'reservations' ? sidebarReservationsEl : sidebarOwnedEl;
+            const overlayEl = view === 'reservations' ? sidebarOverlayReservations : sidebarOverlayOwned;
+            const openBtn = view === 'reservations' ? openSummaryBtnReservations : openSummaryBtnOwned;
+            
+            if (open) {
+                sidebarEl.classList.remove('-translate-x-full');
+                overlayEl.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            } else {
+                sidebarEl.classList.add('-translate-x-full');
+                overlayEl.classList.add('hidden');
+                // 予約モーダルや詳細モーダルが開いていなければスクロール禁止を解除
+                if (modal.classList.contains('hidden') && detailModal.classList.contains('hidden')) {
+                     document.body.classList.remove('overflow-hidden');
+                }
             }
         };
+
         const openSidebar = (view) => toggleSidebar(view, true);
         const closeSidebar = (view) => toggleSidebar(view, false);
+
 
         // Firestoreのリアルタイムリスナー設定 (renderAllViewsを呼ぶように変更)
         const setupFirestoreListener = () => {
@@ -1194,14 +1332,18 @@
             const unsubscribe = onSnapshot(q, (querySnapshot) => {
                 loadingIndicator.classList.remove('hidden');
                 loadingIndicatorOwned.classList.remove('hidden');
-
+                
                 const newReservations = [];
                 querySnapshot.forEach((doc) => {
-                    newReservations.push({ id: doc.id, ...doc.data() });
+                    newReservations.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
                 });
-
                 reservations = newReservations; // グローバルなreservationsを更新
+
                 renderAllViews();
+                
             }, (error) => {
                 console.error("Firestoreリスニングエラー: ", error);
                 loadingIndicator.textContent = "データの読み込み中にエラーが発生しました。";
@@ -1210,6 +1352,7 @@
             return unsubscribe;
         };
 
+
         /**
          * フォームのデータをFirestoreに保存する (新規作成または更新)
          */
@@ -1217,7 +1360,7 @@
             e.preventDefault();
             loadingIndicator.classList.remove('hidden');
             loadingIndicatorOwned.classList.remove('hidden');
-            
+
             const docId = document.getElementById('doc-id').value;
             const name = document.getElementById('name').value.trim();
             const imageUrl = document.getElementById('imageUrl').value.trim();
@@ -1253,9 +1396,9 @@
                     console.log("ドキュメントが更新されました:", docId);
                 } else {
                     // 新規作成
-                    await addDoc(collection(db, COLLECTION_NAME), { 
-                        ...data, 
-                        createdAt: serverTimestamp() 
+                    await addDoc(collection(db, COLLECTION_NAME), {
+                        ...data,
+                        createdAt: serverTimestamp()
                     });
                     console.log("新しいドキュメントが追加されました。");
                 }
@@ -1274,7 +1417,7 @@
             if (!docIdToDelete) return;
             loadingIndicator.classList.remove('hidden');
             loadingIndicatorOwned.classList.remove('hidden');
-            
+
             try {
                 await deleteDoc(doc(db, COLLECTION_NAME, docIdToDelete));
                 console.log("ドキュメントが削除されました:", docIdToDelete);
@@ -1288,204 +1431,122 @@
             }
         };
 
+
         // イベントリスナーの追加 (編集/削除ボタンは動的に再追加)
         const addEventListeners = () => {
             // 編集ボタン
             document.querySelectorAll('.edit-btn').forEach(button => {
                 button.onclick = (e) => {
-                    e.stopPropagation();
-                    openModal(e.currentTarget.dataset.id);
+                    e.stopPropagation(); // 詳細モーダルのイベントをブロック
+                    openModal(button.dataset.docId);
                 };
             });
 
             // 削除ボタン
             document.querySelectorAll('.delete-btn').forEach(button => {
                 button.onclick = (e) => {
-                    e.stopPropagation();
-                    docIdToDelete = e.currentTarget.dataset.id;
-                    const itemName = e.currentTarget.dataset.name || 'このアイテム';
-                    deleteItemNameEl.textContent = itemName;
+                    e.stopPropagation(); // 詳細モーダルのイベントをブロック
+                    docIdToDelete = button.dataset.docId;
+                    deleteItemNameEl.textContent = button.dataset.itemName;
                     deleteModal.classList.remove('hidden');
                 };
             });
-            // 削除モーダル操作はDOMロード時に設定
-            // グループサマリー内のクリックイベントは renderGroupSummary 内で処理されます
+
+            // 🌟 🔽 新規追加: フィギュア詳細モーダルを開くイベントリスナー
+            document.querySelectorAll('.figure-card-clickable').forEach(card => {
+                card.onclick = (e) => {
+                    // 編集/削除ボタンをクリックした場合は詳細表示をブロックする
+                    if (e.target.closest('.edit-btn') || e.target.closest('.delete-btn')) {
+                        return;
+                    }
+
+                    const docId = card.dataset.docId;
+                    const reservation = reservations.find(r => r.id === docId);
+                    if (reservation) {
+                        openDetailModal(reservation);
+                    }
+                };
+            });
         };
 
-        /**
-         * 🌟 タブを切り替える関数 (変更: 固定ボタンの表示/非表示ロジックを追加)
-         * @param {string} view - 'reservations' or 'owned'
-         * @param {boolean} updateHistory - 履歴を更新するかどうか (デフォルト: true)
-         */
-        const switchTab = (view, updateHistory = true) => {
-            // 1. DOM要素の取得
-            const reservationsBtn = document.getElementById('tab-reservations');
-            const ownedBtn = document.getElementById('tab-owned');
-            const reservationsPage = document.getElementById('page-reservations');
-            const ownedPage = document.getElementById('page-owned');
-            
-            // 🔽 修正: 固定ボタンとモバイル予約追加ボタンの取得
-            const fixedReservationsBtn = document.getElementById('fixed-summary-btn-reservations');
-            const fixedOwnedBtn = document.getElementById('fixed-summary-btn-owned');
-            const mobileAddBtn = document.getElementById('open-modal-btn-mobile');
 
-            // 2. タブボタンの切り替え
-            if (view === 'reservations') {
-                reservationsBtn.classList.add(...ACTIVE_CLASSES);
-                reservationsBtn.classList.remove(...INACTIVE_CLASSES);
-                ownedBtn.classList.add(...INACTIVE_CLASSES);
-                ownedBtn.classList.remove(...ACTIVE_CLASSES);
-                
-                // 3. ページの切り替え
-                reservationsPage.classList.remove('hidden');
-                ownedPage.classList.add('hidden');
-                currentView = 'reservations';
+        // 初期化処理
+        const init = async () => {
+            initializeDarkMode();
 
-                // 🔽 修正: 固定ボタンの切り替えとモバイル予約追加ボタンの表示
-                if (fixedReservationsBtn && fixedOwnedBtn && mobileAddBtn) {
-                    fixedReservationsBtn.classList.remove('hidden');
-                    fixedOwnedBtn.classList.add('hidden');
-                    mobileAddBtn.classList.remove('hidden'); // 予約ビューでのみ表示
-                }
-            } else if (view === 'owned') {
-                ownedBtn.classList.add(...ACTIVE_CLASSES);
-                ownedBtn.classList.remove(...INACTIVE_CLASSES);
-                reservationsBtn.classList.add(...INACTIVE_CLASSES);
-                reservationsBtn.classList.remove(...ACTIVE_CLASSES);
-                
-                // 3. ページの切り替え
-                reservationsPage.classList.add('hidden');
-                ownedPage.classList.remove('hidden');
-                currentView = 'owned';
-                
-                // 🔽 修正: 固定ボタンの切り替えとモバイル予約追加ボタンの非表示
-                if (fixedReservationsBtn && fixedOwnedBtn && mobileAddBtn) {
-                    fixedReservationsBtn.classList.add('hidden');
-                    fixedOwnedBtn.classList.remove('hidden');
-                    mobileAddBtn.classList.add('hidden'); // 所持ビューでは非表示
-                }
-            } else {
-                return; // 無効なビュー
-            }
-
-            // 4. 統計情報の更新
-            updateStats(currentView);
-
-            // 5. 履歴の更新 (後方ボタン対応)
-            if (updateHistory) {
-                history.pushState({ view: currentView }, '', `#${currentView}`);
-            }
-            
-            // 🌟 修正: タブ切り替え時にもグループサマリーのタイトルを更新
-            const groupBySelectEl = view === 'reservations' ? groupBySelect : groupBySelectOwned;
-            updateSummaryTitle(view, groupBySelectEl.value);
-        };
-
-        /**
-         * ダークモードを切り替える
-         */
-        const toggleDarkMode = () => {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
-        };
-
-        // Firebaseの初期化とリスナー設定
-        const initAuthAndDb = async () => {
-            // Firebase設定が空でないか確認
-            if (!firebaseConfig || !firebaseConfig.apiKey) {
-                if (authInfoEl) {
-                    authInfoEl.innerHTML = '<i data-lucide="alert-circle" class="w-5 h-5 mr-3 inline-block"></i>エラー: Firebase設定情報が未入力です。コード内の`firebaseConfig`を編集してください。';
-                    authInfoEl.classList.remove('bg-yellow-100', 'border-yellow-500', 'text-yellow-800');
-                    authInfoEl.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
-                    loadingIndicator.classList.add('hidden');
-                    return;
-                }
-            }
-
+            // Firebase接続を試みる
             try {
-                // Firebase初期化
                 const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
                 auth = getAuth(app);
+                db = getFirestore(app);
 
-                // 匿名認証でログイン
+                // 匿名認証でサインイン (読み取り/書き込み権限を付与)
                 await signInAnonymously(auth);
-                console.log("Firebase匿名認証でログインしました。");
-                authInfoEl.innerHTML = '<i data-lucide="cloud-check" class="w-5 h-5 mr-3 inline-block"></i>Firebaseに接続済みです。データはクラウドに保存されます。';
+
+                authInfoEl.innerHTML = `<i data-lucide="cloud-check" class="w-5 h-5 mr-3 inline-block"></i>【接続済み】Firebase Firestoreに接続されています。`;
                 authInfoEl.classList.remove('bg-yellow-100', 'border-yellow-500', 'text-yellow-800');
                 authInfoEl.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
-                lucide.createIcons();
 
-                // Firestoreリスナーを設定
+                // リアルタイムリスナーを設定
                 setupFirestoreListener();
 
             } catch (error) {
-                console.error("Firebaseの初期化または認証エラー:", error);
-                authInfoEl.innerHTML = `<i data-lucide="alert-circle" class="w-5 h-5 mr-3 inline-block"></i>Firebase接続エラー: ${error.message}`;
-                authInfoEl.classList.remove('bg-yellow-100', 'border-yellow-500', 'text-yellow-800');
-                authInfoEl.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
-                loadingIndicator.classList.add('hidden');
-                lucide.createIcons();
-            }
-        };
-
-
-        // ページロード時の処理
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // 1. ダークモード設定の初期ロード
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
+                console.error("Firebase初期化または接続エラー:", error);
+                authInfoEl.innerHTML = `<i data-lucide="cloud-off" class="w-5 h-5 mr-3 inline-block"></i>【接続失敗】Firebaseへの接続に失敗しました: ${error.message}`;
             }
 
-            // 2. FirebaseとFirestoreを初期化
-            initAuthAndDb();
-            
-            // 3. モーダルと削除モーダルのイベントリスナー設定
-            // 🔽 修正: デスクトップ用とモバイル用の両方にイベントリスナーを設定
-            if (openModalBtnDesktop) {
-                openModalBtnDesktop.onclick = () => openModal();
-            }
-            if (openModalBtnMobile) {
-                openModalBtnMobile.onclick = () => openModal();
-            }
-            
-            closeModalBtn.onclick = closeModal;
-            modalCloseIcon.onclick = closeModal;
-            form.onsubmit = saveReservation;
-            
-            cancelDeleteBtn.onclick = () => deleteModal.classList.add('hidden');
-            confirmDeleteBtn.onclick = deleteReservation;
-
-            // 4. ブラウザの後方ボタンの処理
-            window.onpopstate = (e) => {
-                const view = e.state && e.state.view ? e.state.view : 'reservations';
-                switchTab(view, false); // 履歴更新なしでタブを切り替え
-            };
-
-            // 5. ダークモード切り替えボタン
-            const toggleBtn = document.getElementById('toggle-dark-mode');
-            if (toggleBtn) {
-                toggleBtn.onclick = toggleDarkMode;
-            }
-            
-            // 🌟 6. タブボタンのイベントリスナー
-            tabReservationsBtn.onclick = () => switchTab('reservations');
-            tabOwnedBtn.onclick = () => switchTab('owned');
-            
-            // 予約ページのグループ化セレクタのイベントリスナー
-            groupBySelect.onchange = () => {
-                if (currentView === 'reservations') {
-                    renderAllViews();
+            // 🌟 1. モーダル開閉イベント
+            if (openModalBtnDesktop) openModalBtnDesktop.onclick = () => openModal();
+            if (openModalBtnMobile) openModalBtnMobile.onclick = () => openModal();
+            if (closeModalBtn) closeModalBtn.onclick = closeModal;
+            if (modalCloseIcon) modalCloseIcon.onclick = closeModal;
+            // モーダル背景をクリックした場合に閉じる
+            if (modal) modal.onclick = (e) => {
+                if (e.target === modal) {
+                    closeModal();
                 }
             };
+            
+            // 🌟 🔽 新規追加: 詳細モーダルを閉じるイベントリスナー
+            if (closeDetailModalBtn) closeDetailModalBtn.onclick = closeDetailModal;
+            if (detailModalCloseIcon) detailModalCloseIcon.onclick = closeDetailModal;
+            if (detailModal) detailModal.onclick = (e) => {
+                // モーダル背景をクリックした場合に閉じる
+                if (e.target === detailModal) {
+                    closeDetailModal();
+                }
+            };
+
+
+            // 🌟 2. フォーム送信イベント
+            if (form) form.onsubmit = saveReservation;
+
+            // 🌟 3. 削除モーダルイベント
+            if (cancelDeleteBtn) cancelDeleteBtn.onclick = () => deleteModal.classList.add('hidden');
+            if (confirmDeleteBtn) confirmDeleteBtn.onclick = deleteReservation;
+            if (deleteModal) deleteModal.onclick = (e) => {
+                if (e.target === deleteModal) {
+                    deleteModal.classList.add('hidden');
+                }
+            };
+
+            // 🌟 4. ダークモードトグル
+            if (toggleDarkModeBtn) {
+                toggleDarkModeBtn.onclick = toggleDarkMode;
+            }
+            
+            // 🌟 5. タブボタンのイベントリスナー
+            if (tabReservationsBtn) tabReservationsBtn.onclick = () => switchTab('reservations');
+            if (tabOwnedBtn) tabOwnedBtn.onclick = () => switchTab('owned');
+            
+            // 🌟 6. グループ化セレクタのイベントリスナー
+            if (groupBySelect) {
+                groupBySelect.onchange = () => {
+                    if (currentView === 'reservations') {
+                        renderAllViews();
+                    }
+                };
+            }
             
             // 🔽 所持フィギュアシートのグループ化セレクタのイベントリスナー
             if (groupBySelectOwned) {
@@ -1498,16 +1559,31 @@
             
             // 🌟 7. 追加: オフキャンバスメニューのイベントリスナー (fixedボタンに対応するため、変数は既に更新済み)
             // 予約ビュー
-            openSummaryBtnReservations.onclick = () => openSidebar('reservations'); // fixed-summary-btn-reservations に接続
-            closeSummaryBtnReservations.onclick = () => closeSidebar('reservations');
-            sidebarOverlayReservations.onclick = () => closeSidebar('reservations');
+            if (openSummaryBtnReservations) openSummaryBtnReservations.onclick = () => openSidebar('reservations'); // fixed-summary-btn-reservations に接続
+            if (closeSummaryBtnReservations) closeSummaryBtnReservations.onclick = () => closeSidebar('reservations');
+            if (sidebarOverlayReservations) sidebarOverlayReservations.onclick = () => closeSidebar('reservations');
 
             // 所持ビュー
-            openSummaryBtnOwned.onclick = () => openSidebar('owned'); // fixed-summary-btn-owned に接続
-            closeSummaryBtnOwned.onclick = () => closeSidebar('owned');
-            sidebarOverlayOwned.onclick = () => closeSidebar('owned');
+            if (openSummaryBtnOwned) openSummaryBtnOwned.onclick = () => openSidebar('owned'); // fixed-summary-btn-owned に接続
+            if (closeSummaryBtnOwned) closeSummaryBtnOwned.onclick = () => closeSidebar('owned');
+            if (sidebarOverlayOwned) sidebarOverlayOwned.onclick = () => closeSidebar('owned');
 
-        });
+            // 🌟 8. 履歴APIによるタブ切り替えの初期化
+            const initialView = window.location.hash.substring(1) || 'reservations';
+            switchTab(initialView, false); // 履歴を更新せずに初期化
+
+            // 🌟 9. ブラウザの戻る/進むボタン対応
+            window.onpopstate = (event) => {
+                const view = event.state && event.state.view ? event.state.view : 'reservations';
+                switchTab(view, false);
+            };
+
+            // 🌟 10. 初期アイコン描画
+            lucide.createIcons();
+        };
+
+        init();
+
     </script>
 </body>
 </html>
