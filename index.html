@@ -603,7 +603,8 @@
             '受け取り済み/完了': 'bg-green-100 text-green-800 border-green-300',
         };
         const ACTIVE_CLASSES = ['bg-fuchsia-600', 'text-white', 'shadow-md', 'dark:bg-fuchsia-700', 'dark:text-white'];
-        const INACTIVE_CLASSES = ['text-gray-500', 'hover:text-fuchsia-600', 'hover:bg-fuchsia-50', 'dark:text-gray-400', 'dark:hover:bg-gray-700', 'dark:hover:text-white', 'bg-fuchsia-600', 'text-white', 'shadow-md', 'dark:bg-fuchsia-700', 'dark:text-white'];
+        // 💡 修正箇所: INACTIVE_CLASSESからACTIVE_CLASSESと重複するクラスを削除
+        const INACTIVE_CLASSES = ['text-gray-500', 'hover:text-fuchsia-600', 'hover:bg-fuchsia-50', 'dark:text-gray-400', 'dark:hover:bg-gray-700', 'dark:hover:text-white'];
         
         // 🔽 修正: グループ化キーと表示名のマッピング (サマリータイトル用に追加)
         const GROUP_BY_NAMES = {
