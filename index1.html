@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>フィギュアコレクション管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Interフォントの設定 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        /* === ライトモード（デフォルト） === */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0f7fa 0%, #f9f0ff 100%);
+            color: #1f2937;
+            transition: background-color 0.3s, color 0.3s;
+            font-size: 0.95rem;
+        }
+        
+        @media (min-width: 768px) {
+            body {
+                font-size: 1rem;
+            }
+        }
+        
+        .bg-white { background-color: #ffffff !important; }
+        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; }
+
+        .reservation-list::-webkit-scrollbar-thumb {
+            background-color: #a78bfa;
+            border-radius: 10px;
+        }
+        .reservation-list::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        input:not(.dark *), select:not(.dark *) {
+             color: #1f2937;
+        }
+
+        .bg-white p.text-2xl.font-bold.text-gray-900 {
+            color: #1f2937 !important;
+        }
+
+        .bg-white .text-gray-600 {
+            color: #374151 !important;
+        }
+        .bg-white .text-gray-900 {
+            color: #1f2937 !important;
+        }
+        
+        /* === ダークモードのスタイル === */
+        body.dark {
+            background: #1f2937;
+            color: #f3f4f6;
+        }
+        
+        body.overflow-hidden {
+            overflow: hidden;
+        }
+
+        .dark .bg-white {
+            background-color: #374151 !important;
+        }
+        
+        .dark .shadow-2xl { 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        .group-header {
+            background-color: #ec4899;
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .dark .group-header {
+            background-color: #db2777;
+            color: #f3f4f6;
+        }
+        
+        .dark input, .dark select {
+            background-color: #4b5563;
+            color: #f3f4f6;
+            border-color: #6b7280;
+        }
+        
+        .dark .border-gray-300 { border-color: #4b5563; }
+        .dark .text-gray-900 { color: #f3f4f6 !important; }
+        .dark .text-gray-800 { color: #f3f4f6 !important; }
+        .dark .text-gray-700 { color: #e5e7eb !important; }
+        .dark .text-gray-600 { color: #d1d5db !important; }
+        .dark .text-gray-500 { color: #9ca3af !important; }
+        .dark p.text-2xl.font-bold.text-gray-900 { color: #f3f4f6 !important; }
+
+        .dark .reservation-list::-webkit-scrollbar-thumb {
+            background-color: #8b5cf6;
+        }
+        .dark .reservation-list::-webkit-scrollbar-track {
+            background: #4b5563;
+        }
+
+        .reservation-list {
+            min-height: 70vh;
+        }
+        .reservation-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .reservation-list::-webkit-scrollbar-thumb {
+            background-color: #a78bfa;
+            border-radius: 10px;
+        }
+        .reservation-list::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        .figure-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        
+        @keyframes pulse-once {
+          0% { background-color: #8b5cf6; }
+          50% { background-color: #a78bfa; }
+          100% { background-color: #8b5cf6; }
+        }
+        .animate-pulse-once {
+            animation: pulse-once 2s ease-out;
+        }
+
+        .fixed-menu-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 51;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        .fixed-add-button {
+            width: 56px;
+            height: 56px;
+            padding: 1rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .fixed-summary-button {
+            width: 48px;
+            height: 48px;
+            padding: 0.75rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (min-width: 768px) {
+            .fixed-menu-container {
+                display: none;
+            }
+        }
+        
+        .scrollable-modal-container {
+            overflow-y: auto;
+        }
+        
+        .modal-content-wrapper {
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            margin-top: auto;
+            margin-bottom: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="max-w-7xl mx-auto p-4 md:p-6">
+        
+        <div id="auth-info-firebase" class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 rounded-xl shadow-lg text-sm text-yellow-800 font-semibold flex items-center">
+            <i data-lucide="cloud-off" class="w-5 h-5 mr-3 inline-block"></i>
+            【未接続】`firebaseConfig`を設定して、Firebaseに接続してください。
+        </div>
+
+        <div class="flex justify-between items-center mb-8">
+             <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 flex items-center flex-grow justify-center">
+                <i data-lucide="box" class="w-8 h-8 text-fuchsia-600 mr-2"></i>フィギュアコレクション管理
+            </h1>
+            <button id="toggle-dark-mode" class="p-3 rounded-full text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition duration-300 transform hover:scale-110">
+                <i data-lucide="moon" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <div class="mb-8">
+            <div class="border-b border-gray-200 dark:border-gray-700">
+                <nav class="flex space-x-4" aria-label="Tabs">
+                    <button id="tab-reservations" data-tab="reservations" class="tab-button py-3 px-4 font-medium text-lg whitespace-nowrap transition duration-200 rounded-lg bg-fuchsia-600 text-white shadow-md dark:bg-fuchsia-700 dark:text-white">
+                        <i data-lucide="calendar-check" class="w-5 h-5 mr-2 inline-block"></i>予約リスト
+                    </button>
+                    <button id="tab-owned" data-tab="owned" class="tab-button py-3 px-4 font-medium text-lg whitespace-nowrap transition duration-200 rounded-lg text-gray-500 hover:text-fuchsia-600 hover:bg-fuchsia-50 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                        <i data-lucide="archive" class="w-5 h-5 mr-2 inline-block"></i>所持リスト
+                    </button>
+                    <button id="tab-sold" data-tab="sold" class="tab-button py-3 px-4 font-medium text-lg whitespace-nowrap transition duration-200 rounded-lg text-gray-500 hover:text-fuchsia-600 hover:bg-fuchsia-50 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                        <i data-lucide="banknote" class="w-5 h-5 mr-2 inline-block"></i>売却リスト
+                    </button>
+                </nav>
+            </div>
+        </div>
+        
+        <div id="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
+
+        <div id="tab-content-container">
+            <div id="page-reservations" class="tab-page">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
+                    <button id="open-modal-btn-desktop" class="hidden md:px-8 md:py-3 md:bg-fuchsia-600 md:text-white md:font-bold md:rounded-full md:shadow-xl md:hover:bg-fuchsia-700 md:transition md:duration-300 md:transform md:hover:scale-105 md:flex md:items-center md:justify-center">
+                        <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i>新しい予約を追加
+                    </button>
+                    <div class="w-full md:w-auto flex items-center space-x-3 justify-end">
+                        <label for="group-by-select" class="text-gray-700 font-medium whitespace-nowrap">表示をグループ化:</label>
+                        <select id="group-by-select" class="p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none bg-white">
+                            <option value="none">グループ化しない</option>
+                            <option value="releaseDateMonth">発売月</option>
+                            <option value="manufacturer">メーカー</option>
+                            <option value="shop">購入店舗</option>
+                            <option value="scale">スケール</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="main-content-wrapper-reservations" class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div id="group-summary-sidebar" class="fixed inset-y-0 left-0 w-80 bg-white z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 md:col-span-3 md:h-fit md:sticky md:top-4 md:p-6 md:rounded-3xl md:shadow-2xl md:border md:border-gray-100 p-6 rounded-r-3xl shadow-2xl border-r border-t border-b border-gray-200 overflow-y-auto">
+                        <button id="close-summary-btn-reservations" class="md:hidden absolute top-4 right-4 text-gray-500 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition z-50">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                        <h2 id="summary-title-reservations" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center">
+                            <i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>グループサマリー
+                        </h2>
+                        <div id="group-summary-list" class="space-y-2">
+                            <p class="text-gray-500 text-sm">グループ化オプションを選択してください。</p>
+                        </div>
+                    </div>
+           
+                    <div class="md:col-span-9">
+                        <div class="bg-white p-3 md:p-8 rounded-3xl shadow-2xl border border-gray-100">
+                            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
+                               <i data-lucide="list-checks" class="w-5 h-5 mr-2 text-indigo-500"></i>予約リスト
+                            </h2>
+                            <div id="loading-indicator" class="text-center py-12 text-gray-500 hidden">
+                                <i data-lucide="loader-circle" class="w-8 h-8 animate-spin mx-auto mb-3 text-indigo-500"></i>データをクラウドから読み込み中...
+                            </div>
+                            <div id="reservation-list" class="reservation-list space-y-5"></div>
+                            <div id="no-data-message" class="text-center py-12 text-gray-400 hidden">
+                                <i data-lucide="info" class="w-8 h-8 mx-auto mb-3"></i>
+                                <p class="text-lg font-medium">現在、登録されている予約はありません。</p>
+                                <p>上の「新しい予約を追加」ボタンから登録を始めましょう！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="sidebar-overlay-reservations" class="hidden md:hidden fixed inset-0 bg-gray-900 bg-opacity-70 z-40 transition-opacity duration-300"></div>
+            </div>
+            
+            <div id="page-owned" class="tab-page hidden">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
+                    <div class="flex-grow"></div> 
+                    <div class="flex items-center space-x-3">
+                        <label for="group-by-select-owned" class="text-gray-700 font-medium whitespace-nowrap">表示をグループ化:</label>
+                        <select id="group-by-select-owned" class="p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none bg-white">
+                            <option value="none">グループ化しない</option>
+                            <option value="releaseDateMonth">購入/受取月</option>
+                            <option value="manufacturer">メーカー</option>
+                            <option value="shop">購入店舗</option>
+                            <option value="scale">スケール</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="main-content-wrapper-owned" class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div id="group-summary-sidebar-owned" class="fixed inset-y-0 left-0 w-80 bg-white z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 md:col-span-3 md:h-fit md:sticky md:top-4 md:p-6 md:rounded-3xl md:shadow-2xl md:border md:border-gray-100 p-6 rounded-r-3xl shadow-2xl border-r border-t border-b border-gray-200 overflow-y-auto">
+                        <button id="close-summary-btn-owned" class="md:hidden absolute top-4 right-4 text-gray-500 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition z-50">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                        <h2 id="summary-title-owned" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center">
+                            <i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>所持フィギュア サマリー
+                        </h2>
+                        <div id="group-summary-list-owned" class="space-y-2">
+                            <p class="text-gray-500 text-sm">グループ化オプションを選択してください。</p>
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-9">
+                        <div class="bg-white p-3 md:p-8 rounded-3xl shadow-2xl border border-gray-100">
+                            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
+                                <i data-lucide="archive" class="w-5 h-5 mr-2 text-indigo-500"></i>所持リスト
+                            </h2>
+                            <div id="loading-indicator-owned" class="text-center py-12 text-gray-500 hidden">
+                                <i data-lucide="loader-circle" class="w-8 h-8 animate-spin mx-auto mb-3 text-indigo-500"></i>データをクラウドから読み込み中...
+                            </div>
+                            <div id="owned-list" class="reservation-list space-y-5"></div>
+                            <div id="no-owned-data-message" class="text-center py-12 text-gray-400 hidden">
+                                <i data-lucide="info" class="w-8 h-8 mx-auto mb-3"></i>
+                                <p class="text-lg font-medium">現在、受け取り済みのフィギュアはありません。</p>
+                                <p>予約リストからステータスを「受け取り済み/完了」に更新してください！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="sidebar-overlay-owned" class="hidden md:hidden fixed inset-0 bg-gray-900 bg-opacity-70 z-40 transition-opacity duration-300"></div>
+            </div>
+
+            <div id="page-sold" class="tab-page hidden">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
+                    <div class="flex-grow"></div> 
+                    <div class="flex items-center space-x-3">
+                        <label for="group-by-select-sold" class="text-gray-700 font-medium whitespace-nowrap">表示をグループ化:</label>
+                        <select id="group-by-select-sold" class="p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none bg-white">
+                            <option value="none">グループ化しない</option>
+                            <option value="releaseDateMonth">発売/引渡月</option>
+                            <option value="manufacturer">メーカー</option>
+                            <option value="shop">購入店舗</option>
+                            <option value="scale">スケール</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="main-content-wrapper-sold" class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div id="group-summary-sidebar-sold" class="fixed inset-y-0 left-0 w-80 bg-white z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 md:col-span-3 md:h-fit md:sticky md:top-4 md:p-6 md:rounded-3xl md:shadow-2xl md:border md:border-gray-100 p-6 rounded-r-3xl shadow-2xl border-r border-t border-b border-gray-200 overflow-y-auto">
+                        <button id="close-summary-btn-sold" class="md:hidden absolute top-4 right-4 text-gray-500 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition z-50">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                        <h2 id="summary-title-sold" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center">
+                            <i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>売却フィギュア サマリー
+                        </h2>
+                        <div id="group-summary-list-sold" class="space-y-2">
+                            <p class="text-gray-500 text-sm">グループ化オプションを選択してください。</p>
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-9">
+                        <div class="bg-white p-3 md:p-8 rounded-3xl shadow-2xl border border-gray-100">
+                            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
+                                <i data-lucide="banknote" class="w-5 h-5 mr-2 text-indigo-500"></i>売却リスト
+                            </h2>
+                            <div id="loading-indicator-sold" class="text-center py-12 text-gray-500 hidden">
+                                <i data-lucide="loader-circle" class="w-8 h-8 animate-spin mx-auto mb-3 text-indigo-500"></i>データをクラウドから読み込み中...
+                            </div>
+                            <div id="sold-list" class="reservation-list space-y-5"></div>
+                            <div id="no-sold-data-message" class="text-center py-12 text-gray-400 hidden">
+                                <i data-lucide="info" class="w-8 h-8 mx-auto mb-3"></i>
+                                <p class="text-lg font-medium">現在、売却済みのフィギュアはありません。</p>
+                                <p>所持リスト等の編集からステータスを「売却済み」に更新してください！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="sidebar-overlay-sold" class="hidden md:hidden fixed inset-0 bg-gray-900 bg-opacity-70 z-40 transition-opacity duration-300"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobile-fixed-menu" class="fixed-menu-container md:hidden">
+        <button id="open-modal-btn-mobile" class="fixed-add-button bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105" aria-label="新しい予約を追加">
+            <i data-lucide="plus" class="w-8 h-8"></i>
+        </button>
+        <button id="fixed-summary-btn-reservations" class="fixed-summary-button bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105" aria-label="グループサマリーを開く (予約)">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <button id="fixed-summary-btn-owned" class="fixed-summary-button bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105 hidden" aria-label="グループサマリーを開く (所持)">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <button id="fixed-summary-btn-sold" class="fixed-summary-button bg-fuchsia-600 text-white rounded-full shadow-2xl hover:bg-fuchsia-700 transition duration-300 transform hover:scale-105 hidden" aria-label="グループサマリーを開く (売却)">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+    </div>
+    
+    <div id="reservation-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 hidden p-4 scrollable-modal-container">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-8 relative transform transition-all duration-300 modal-content-wrapper">
+          <h2 id="modal-title" class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">新しい予約を追加</h2>
+            <form id="reservation-form" class="space-y-5">
+                <input type="hidden" id="doc-id">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">フィギュア名 <span class="text-red-500">*</span></label>
+                    <input type="text" id="name" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                </div>
+                <div>
+                    <label for="imageUrl" class="block text-sm font-medium text-gray-700">画像URL</label>
+                    <input type="url" id="imageUrl" placeholder="http://..." class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="manufacturer" class="block text-sm font-medium text-gray-700">メーカー名/ブランド名</label>
+                        <input type="text" id="manufacturer" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                    <div>
+                        <label for="scale" class="block text-sm font-medium text-gray-700">スケール情報 (例: 1/7, HG)</label>
+                        <input type="text" id="scale" placeholder="例: 1/7" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="reservationDate" class="block text-sm font-medium text-gray-700">予約日 <span class="text-red-500">*</span></label>
+                        <input type="date" id="reservationDate" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none transition duration-150">
+                    </div>
+                    <div>
+                        <label for="releaseDate" class="block text-sm font-medium text-gray-700">発売/引渡予定日 <span class="text-red-500">*</span></label>
+                        <input type="date" id="releaseDate" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none transition duration-150">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="shop" class="block text-sm font-medium text-gray-700">購入店舗/予約サイト</label>
+                        <input type="text" id="shop" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-gray-700">価格 (円)</label>
+                        <input type="number" id="price" min="0" value="0" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700">予約状況 <span class="text-red-500">*</span></label>
+                    <select id="status" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 appearance-none transition duration-150 bg-white">
+                        <option value="予約済み">予約済み</option>
+                        <option value="支払い済み（未発送）">支払い済み（未発送）</option>
+                        <option value="発送連絡待ち">発送連絡待ち</option>
+                        <option value="キャンセル">キャンセル</option>
+                        <option value="受け取り済み/完了">受け取り済み/完了</option>
+                        <option value="売却済み">売却済み</option>
+                    </select>
+                </div>
+                <div id="selling-price-container" class="hidden">
+                    <label for="sellingPrice" class="block text-sm font-medium text-gray-700">売却金額 (円)</label>
+                    <input type="number" id="sellingPrice" min="0" value="0" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="orderNumber" class="block text-sm font-medium text-gray-700">注文番号/予約番号</label>
+                        <input type="text" id="orderNumber" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                    <div>
+                        <label for="notes" class="block text-sm font-medium text-gray-700">備考欄</label>
+                        <input type="text" id="notes" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-5">
+                    <button type="button" id="close-modal-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition duration-150 font-medium">キャンセル</button>
+                    <button type="submit" class="px-8 py-2 bg-indigo-600 text-white font-bold rounded-full shadow-lg hover:bg-indigo-700 transition duration-150 transform hover:scale-105">保存</button>
+                </div>
+            </form>
+            <button id="modal-close-icon" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="delete-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 space-y-4">
+            <h3 class="text-xl font-bold text-red-600 flex items-center">
+                <i data-lucide="alert-triangle" class="w-6 h-6 mr-2"></i>削除の確認
+            </h3>
+            <p class="text-gray-700">本当にこの予約情報（<span id="delete-item-name" class="font-bold"></span>）を削除しますか？この操作は元に戻せません。</p>
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" id="cancel-delete-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition duration-150">キャンセル</button>
+                <button type="button" id="confirm-delete-btn" class="px-8 py-2 bg-red-600 text-white font-bold rounded-full shadow-md hover:bg-red-700 transition duration-150">削除を実行</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="figure-detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 hidden p-4 scrollable-modal-container">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-8 relative transform transition-all duration-300 modal-content-wrapper">
+            <h2 id="detail-modal-title" class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2 flex items-center">
+                <i data-lucide="info" class="w-7 h-7 mr-2 text-indigo-500"></i>フィギュア詳細情報
+            </h2>
+            <div id="detail-modal-content" class="space-y-4"></div>
+            <div class="flex justify-end pt-6">
+                <button type="button" id="close-detail-modal-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition duration-150 font-medium">閉じる</button>
+            </div>
+            <button id="detail-modal-close-icon" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, setDoc, deleteDoc, onSnapshot, collection, query, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // =========================================================
+        // 🚨 【最重要】ここにあなたのFirebase設定を上書きしてください
+        // =========================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD9jmIafM4JjpJyv65WjFWlbV_n9dssUt4",
+            authDomain: "figure-manager-app.firebaseapp.com",
+            projectId: "figure-manager-app",
+            storageBucket: "figure-manager-app.firebaseapp.com",
+            messagingSenderId: "487492839040",
+            appId: "1:487492839040:web:a43419d861335f259da865",
+            measurementId: "G-19FTK3XTW4"
+        };
+
+        // アプリケーション状態・変数
+        let db = null, auth = null;
+        let reservations = [];
+        const COLLECTION_NAME = 'figure_reservations_data';
+
+        const STATUS_COMPLETED = '受け取り済み/完了';
+        const STATUS_CANCELLED = 'キャンセル';
+        const STATUS_SOLD = '売却済み';
+        
+        const STATUS_COLORS = {
+            '予約済み': 'bg-blue-100 text-blue-800 border-blue-300',
+            '支払い済み（未発送）': 'bg-indigo-100 text-indigo-800 border-indigo-300',
+            '発送連絡待ち': 'bg-purple-100 text-purple-800 border-purple-300',
+            'キャンセル': 'bg-red-100 text-red-800 border-red-300',
+            '受け取り済み/完了': 'bg-green-100 text-green-800 border-green-300',
+            '売却済み': 'bg-amber-100 text-amber-800 border-amber-300',
+        };
+
+        const GROUP_BY_NAMES = {
+            'none': '全アイテム',
+            'releaseDateMonth': '発売月',
+            'manufacturer': 'メーカー',
+            'shop': '購入店舗',
+            'scale': 'スケール',
+        };
+
+        const ACTIVE_CLASSES = ['bg-fuchsia-600', 'text-white', 'shadow-md', 'dark:bg-fuchsia-700', 'dark:text-white'];
+        const INACTIVE_CLASSES = ['text-gray-500', 'hover:text-fuchsia-600', 'hover:bg-fuchsia-50', 'dark:text-gray-400', 'dark:hover:bg-gray-700', 'dark:hover:text-white'];
+        let currentView = 'reservations';
+        let docIdToDelete = null;
+
+        // DOM要素のキャッシュ
+        const reservationListEl = document.getElementById('reservation-list');
+        const ownedListEl = document.getElementById('owned-list');
+        const soldListEl = document.getElementById('sold-list');
+        const openModalBtnDesktop = document.getElementById('open-modal-btn-desktop');
+        const openModalBtnMobile = document.getElementById('open-modal-btn-mobile');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalCloseIcon = document.getElementById('modal-close-icon');
+        const modal = document.getElementById('reservation-modal');
+        const form = document.getElementById('reservation-form');
+        const modalTitle = document.getElementById('modal-title');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadingIndicatorOwned = document.getElementById('loading-indicator-owned');
+        const loadingIndicatorSold = document.getElementById('loading-indicator-sold');
+        const noDataMessage = document.getElementById('no-data-message');
+        const noOwnedDataMessage = document.getElementById('no-owned-data-message');
+        const noSoldDataMessage = document.getElementById('no-sold-data-message');
+        const statsEl = document.getElementById('stats');
+        const authInfoEl = document.getElementById('auth-info-firebase');
+        const groupBySelect = document.getElementById('group-by-select');
+        const groupBySelectOwned = document.getElementById('group-by-select-owned');
+        const groupBySelectSold = document.getElementById('group-by-select-sold');
+        const groupSummaryListEl = document.getElementById('group-summary-list');
+        const groupSummaryListOwnedEl = document.getElementById('group-summary-list-owned');
+        const groupSummaryListSoldEl = document.getElementById('group-summary-list-sold');
+        const deleteModal = document.getElementById('delete-modal');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const deleteItemNameEl = document.getElementById('delete-item-name');
+        
+        const tabReservationsBtn = document.getElementById('tab-reservations');
+        const tabOwnedBtn = document.getElementById('tab-owned');
+        const tabSoldBtn = document.getElementById('tab-sold');
+        const reservationsPage = document.getElementById('page-reservations');
+        const ownedPage = document.getElementById('page-owned');
+        const soldPage = document.getElementById('page-sold');
+        
+        const sidebarReservationsEl = document.getElementById('group-summary-sidebar');
+        const sidebarOwnedEl = document.getElementById('group-summary-sidebar-owned');
+        const sidebarSoldEl = document.getElementById('group-summary-sidebar-sold');
+        const openSummaryBtnReservations = document.getElementById('fixed-summary-btn-reservations');
+        const openSummaryBtnOwned = document.getElementById('fixed-summary-btn-owned');
+        const openSummaryBtnSold = document.getElementById('fixed-summary-btn-sold');
+        const closeSummaryBtnReservations = document.getElementById('close-summary-btn-reservations');
+        const closeSummaryBtnOwned = document.getElementById('close-summary-btn-owned');
+        const closeSummaryBtnSold = document.getElementById('close-summary-btn-sold');
+        const sidebarOverlayReservations = document.getElementById('sidebar-overlay-reservations');
+        const sidebarOverlayOwned = document.getElementById('sidebar-overlay-owned');
+        const sidebarOverlaySold = document.getElementById('sidebar-overlay-sold');
+        const toggleDarkModeBtn = document.getElementById('toggle-dark-mode');
+        
+        const detailModal = document.getElementById('figure-detail-modal');
+        const detailModalTitleEl = document.getElementById('detail-modal-title');
+        const detailModalContentEl = document.getElementById('detail-modal-content');
+        const closeDetailModalBtn = document.getElementById('close-detail-modal-btn');
+        const detailModalCloseIcon = document.getElementById('detail-modal-close-icon');
+        const statusSelect = document.getElementById('status');
+        const sellingPriceContainer = document.getElementById('selling-price-container');
+
+        // アプリ初期化
+        function initApp() {
+            if (firebaseConfig.apiKey === "YOUR_FIREBASE_API_KEY" || !firebaseConfig.apiKey) {
+                authInfoEl.innerHTML = `<i data-lucide="cloud-off" class="w-5 h-5 mr-3 inline-block"></i> 【未接続】firebaseConfigを設定してください。`;
+                lucide.createIcons();
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                authInfoEl.innerHTML = `<i data-lucide="cloud-lightning" class="w-5 h-5 mr-3 inline-block"></i> 【接続完了】Firebaseに正常接続されました。`;
+                authInfoEl.className = "mb-6 p-4 bg-green-100 border-l-4 border-green-500 rounded-xl shadow-lg text-sm text-green-800 font-semibold flex items-center";
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    authInfoEl.style.transition = "opacity 1s ease";
+                    authInfoEl.style.opacity = "0";
+                    setTimeout(() => authInfoEl.classList.add('hidden'), 1000);
+                }, 3000);
+
+                signInAnonymously(auth).then(() => {
+                    setupRealtimeSync();
+                }).catch(err => {
+                    console.error("Auth Error:", err);
+                });
+            } catch (e) {
+                console.error("Init Error:", e);
+            }
+        }
+
+        // リアルタイムデータ同期
+        function setupRealtimeSync() {
+            loadingIndicator.classList.remove('hidden');
+            loadingIndicatorOwned.classList.remove('hidden');
+            loadingIndicatorSold.classList.remove('hidden');
+            
+            const q = query(collection(db, COLLECTION_NAME), orderBy("serverCreatedAt", "desc"));
+            onSnapshot(q, (snapshot) => {
+                reservations = [];
+                snapshot.forEach((doc) => {
+                    reservations.push({ id: doc.id, ...doc.data() });
+                });
+                
+                loadingIndicator.classList.add('hidden');
+                loadingIndicatorOwned.classList.add('hidden');
+                loadingIndicatorSold.classList.add('hidden');
+                
+                updateViews();
+            }, (error) => {
+                console.error("Firestore Error:", error);
+            });
+        }
+
+        // 画面レンダリング統合
+        function updateViews() {
+            renderStats();
+            
+            const reservationData = reservations.filter(item => item.status !== STATUS_COMPLETED && item.status !== STATUS_SOLD);
+            const ownedData = reservations.filter(item => item.status === STATUS_COMPLETED);
+            const soldData = reservations.filter(item => item.status === STATUS_SOLD);
+
+            renderList(reservationData, groupBySelect.value, reservationListEl, noDataMessage, 'reservations');
+            renderGroupSummary(reservationData, groupBySelect.value, groupSummaryListEl, 'reservations');
+
+            renderList(ownedData, groupBySelectOwned.value, ownedListEl, noOwnedDataMessage, 'owned');
+            renderGroupSummary(ownedData, groupBySelectOwned.value, groupSummaryListOwnedEl, 'owned');
+
+            renderList(soldData, groupBySelectSold.value, soldListEl, noSoldDataMessage, 'sold');
+            renderGroupSummary(soldData, groupBySelectSold.value, groupSummaryListSoldEl, 'sold');
+            
+            lucide.createIcons();
+        }
+
+        // 統計カード
+        function renderStats() {
+            const activeItems = reservations.filter(item => item.status !== STATUS_CANCELLED);
+            const totalCost = reservations.filter(item => item.status !== STATUS_CANCELLED && item.status !== STATUS_SOLD).reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+            const ownedItems = reservations.filter(item => item.status === STATUS_COMPLETED);
+            const pendingItems = reservations.filter(item => item.status !== STATUS_COMPLETED && item.status !== STATUS_CANCELLED && item.status !== STATUS_SOLD);
+            const soldItems = reservations.filter(item => item.status === STATUS_SOLD);
+            const totalSoldEarnings = soldItems.reduce((sum, item) => sum + (Number(item.sellingPrice) || 0), 0);
+
+            statsEl.innerHTML = `
+                <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 flex items-center space-x-4">
+                    <div class="p-4 bg-fuchsia-100 rounded-xl text-fuchsia-600 dark:bg-fuchsia-900 dark:text-fuchsia-300">
+                        <i data-lucide="layers" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">総コレクション数</p>
+                        <p class="text-2xl font-bold text-gray-900">${activeItems.length} <span class="text-sm font-normal text-gray-500">点</span></p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 flex items-center space-x-4">
+                    <div class="p-4 bg-emerald-100 rounded-xl text-emerald-600 dark:bg-emerald-900 dark:text-emerald-300">
+                        <i data-lucide="wallet" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">総投資額 (売却除く)</p>
+                        <p class="text-2xl font-bold text-gray-900">${totalCost.toLocaleString()} <span class="text-sm font-normal text-gray-500">円</span></p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 flex items-center space-x-4">
+                    <div class="p-4 bg-amber-100 rounded-xl text-amber-600 dark:bg-amber-900 dark:text-amber-300">
+                        <i data-lucide="banknote" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">合計売却金額</p>
+                        <p class="text-2xl font-bold text-gray-900">${totalSoldEarnings.toLocaleString()} <span class="text-sm font-normal text-gray-500">円</span></p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 flex items-center space-x-4">
+                    <div class="p-4 bg-blue-100 rounded-xl text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+                        <i data-lucide="clock" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">ステータス内訳</p>
+                        <p class="text-sm font-bold text-gray-900">
+                            <span>予約: ${pendingItems.length} | 所持: ${ownedItems.length} | 売却: ${soldItems.length}</span>
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        const formatYearMonth = (dateStr) => {
+            if (!dateStr) return '未設定';
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '未設定';
+            return `${date.getFullYear()}年${String(date.getMonth() + 1).padStart(2, '0')}月`;
+        };
+
+        // リスト描画処理
+        function renderList(dataList, groupBy, targetContainerEl, noDataMessageEl, viewType) {
+            targetContainerEl.innerHTML = '';
+            if (dataList.length === 0) {
+                noDataMessageEl.classList.remove('hidden');
+                return;
+            } else {
+                noDataMessageEl.classList.add('hidden');
+            }
+
+            if (groupBy === 'none') {
+                dataList.forEach(item => {
+                    targetContainerEl.appendChild(createFigureCard(item, viewType));
+                });
+            } else {
+                const groups = {};
+                dataList.forEach(item => {
+                    let key = '未設定';
+                    if (groupBy === 'releaseDateMonth') key = formatYearMonth(item.releaseDate);
+                    else if (item[groupBy]) key = item[groupBy];
+                    
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(item);
+                });
+
+                Object.keys(groups).sort((a,b) => a === '未設定' ? 1 : b === '未設定' ? -1 : a.localeCompare(b, 'ja', {numeric:true})).forEach(groupKey => {
+                    const header = document.createElement('div');
+                    header.className = 'group-header';
+                    header.id = `scroll-target-${viewType}-${encodeURIComponent(groupKey)}`;
+                    
+                    const items = groups[groupKey];
+                    const cost = items.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
+                    const soldCost = items.reduce((sum, i) => sum + (Number(i.sellingPrice) || 0), 0);
+                    const infoText = viewType === 'sold' ? `売却額計: ${soldCost.toLocaleString()}円` : `金額計: ${cost.toLocaleString()}円`;
+
+                    header.innerHTML = `
+                        <div class="flex justify-between items-center text-sm md:text-base">
+                            <span><i data-lucide="folder-open" class="w-4 h-4 mr-2 inline-block"></i>${groupKey} (${items.length}点)</span>
+                            <span class="text-xs md:text-sm font-normal opacity-90">${infoText}</span>
+                        </div>
+                    `;
+                    targetContainerEl.appendChild(header);
+                    items.forEach(item => {
+                        targetContainerEl.appendChild(createFigureCard(item, viewType));
+                    });
+                });
+            }
+        }
+
+        // カード生成
+        function createFigureCard(item, viewType) {
+            const card = document.createElement('div');
+            card.id = `card-${item.id}`;
+            card.className = 'bg-white p-4 md:p-5 rounded-2xl shadow-md border border-gray-100 flex space-x-4 hover:shadow-xl transition duration-200 relative transform hover:-translate-y-0.5 cursor-pointer';
+            
+            const imgUrl = item.imageUrl || 'https://images.unsplash.com/photo-1608889174639-414d9fde97f8?q=80&w=200&auto=format&fit=crop';
+            const statusColorClass = STATUS_COLORS[item.status] || 'bg-gray-100 text-gray-800';
+            
+            card.onclick = (e) => {
+                if (e.target.closest('button')) return;
+                openDetailModal(item);
+            };
+
+            let priceDisplay = `<p class="text-sm font-bold text-fuchsia-600 mt-1"><span class="text-xs font-normal text-gray-500">定価/購入価格:</span> ${(Number(item.price)||0).toLocaleString()} 円</p>`;
+            if (item.status === STATUS_SOLD) {
+                priceDisplay += `<p class="text-sm font-bold text-amber-600 mt-0.5"><span class="text-xs font-normal text-gray-500">売却金額:</span> ${(Number(item.sellingPrice)||0).toLocaleString()} 円</p>`;
+            }
+
+            card.innerHTML = `
+                <img src="${imgUrl}" alt="${item.name}" class="figure-image" onerror="this.src='https://images.unsplash.com/photo-1608889174639-414d9fde97f8?q=80&w=200&auto=format&fit=crop'">
+                <div class="flex-grow min-w-0 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-start justify-between space-x-2">
+                            <h3 class="font-bold text-base md:text-lg text-gray-900 truncate leading-tight">${item.name}</h3>
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold border ${statusColorClass} whitespace-nowrap">${item.status || '予約済み'}</span>
+                        </div>
+                        <p class="text-xs md:text-sm text-gray-600 mt-1 truncate">
+                            <span class="text-gray-400">メーカー:</span> ${item.manufacturer || '未設定'} | <span class="text-gray-400">スケール:</span> ${item.scale || '未設定'}
+                        </p>
+                        <p class="text-xs md:text-sm text-gray-600 mt-0.5">
+                            <span class="text-gray-400">発売/引渡:</span> ${item.releaseDate || '未設定'}
+                        </p>
+                        ${priceDisplay}
+                    </div>
+                    <div class="flex justify-end space-x-2 mt-2 pt-2 border-t border-gray-50 dark:border-gray-700">
+                        <button class="edit-btn p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-lg transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button class="delete-btn p-2 text-red-600 hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `;
+
+            card.querySelector('.edit-btn').onclick = (e) => { e.stopPropagation(); openEditModal(item); };
+            card.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); openDeleteConfirmation(item.id, item.name); };
+            return card;
+        }
+
+        // サマリーサイドバー描画
+        function renderGroupSummary(dataList, groupBy, targetSummaryContainerEl, viewType) {
+            targetSummaryContainerEl.innerHTML = '';
+            if (groupBy === 'none' || dataList.length === 0) {
+                targetSummaryContainerEl.innerHTML = `<p class="text-gray-400 text-sm py-4 text-center">グループ化を行うとサマリーが自動生成されます。</p>`;
+                return;
+            }
+
+            const groups = {};
+            dataList.forEach(item => {
+                let key = '未設定';
+                if (groupBy === 'releaseDateMonth') key = formatYearMonth(item.releaseDate);
+                else if (item[groupBy]) key = item[groupBy];
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(item);
+            });
+
+            const titleEl = document.getElementById(`summary-title-${viewType}`);
+            if (titleEl) titleEl.innerHTML = `<i data-lucide="layers" class="w-5 h-5 mr-2 text-fuchsia-500"></i>${GROUP_BY_NAMES[groupBy]}別サマリー`;
+
+            Object.keys(groups).sort((a,b) => a === '未設定' ? 1 : b === '未設定' ? -1 : a.localeCompare(b, 'ja', {numeric:true})).forEach(key => {
+                const items = groups[key];
+                const cost = items.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
+                const soldCost = items.reduce((sum, i) => sum + (Number(i.sellingPrice) || 0), 0);
+                const priceText = viewType === 'sold' ? `売却: ${soldCost.toLocaleString()}円` : `${cost.toLocaleString()}円`;
+
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-3 rounded-xl border border-gray-100 hover:border-fuchsia-300 hover:bg-fuchsia-50/50 dark:hover:bg-gray-700/50 transition duration-150 flex justify-between items-center group';
+                btn.innerHTML = `
+                    <div class="min-w-0 pr-2">
+                        <p class="font-semibold text-sm text-gray-700 truncate group-hover:text-fuchsia-600 dark:group-hover:text-fuchsia-400">${key}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">${priceText}</p>
+                    </div>
+                    <span class="bg-gray-100 dark:bg-gray-800 text-gray-600 px-2 py-1 rounded-md text-xs font-bold group-hover:bg-fuchsia-100 group-hover:text-fuchsia-700">${items.length}点</span>
+                `;
+
+                btn.onclick = () => {
+                    closeSidebar(viewType);
+                    const target = document.getElementById(`scroll-target-${viewType}-${encodeURIComponent(key)}`);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        let next = target.nextElementSibling;
+                        if (next && next.id && next.id.startsWith('card-')) {
+                            next.classList.add('animate-pulse-once');
+                            setTimeout(() => next.classList.remove('animate-pulse-once'), 2000);
+                        }
+                    }
+                };
+                targetSummaryContainerEl.appendChild(btn);
+            });
+        }
+
+        // 詳細モーダル
+        function openDetailModal(item) {
+            detailModalTitleEl.innerText = item.name;
+            const imgUrl = item.imageUrl || 'https://images.unsplash.com/photo-1608889174639-414d9fde97f8?q=80&w=200&auto=format&fit=crop';
+            
+            let sellingPriceHtml = '';
+            if (item.status === STATUS_SOLD) {
+                sellingPriceHtml = `
+                    <div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900">
+                        <span class="block text-xs font-medium text-amber-600 dark:text-amber-400">売却金額</span>
+                        <span class="text-xl font-bold text-amber-700 dark:text-amber-300">${(Number(item.sellingPrice) || 0).toLocaleString()} 円</span>
+                    </div>
+                `;
+            }
+
+            detailModalContentEl.innerHTML = `
+                <div class="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+                    <img src="${imgUrl}" alt="${item.name}" class="w-40 h-40 object-cover rounded-2xl shadow-md border border-gray-100 flex-shrink-0" onerror="this.src='https://images.unsplash.com/photo-1608889174639-414d9fde97f8?q=80&w=200&auto=format&fit=crop'">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl"><span class="block text-xs font-medium text-gray-500">ステータス</span><span class="font-semibold">${item.status || '予約済み'}</span></div>
+                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl"><span class="block text-xs font-medium text-gray-500">購入価格</span><span class="font-bold text-fuchsia-600">${(Number(item.price)||0).toLocaleString()} 円</span></div>
+                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl"><span class="block text-xs font-medium text-gray-500">メーカー</span><span class="font-semibold">${item.manufacturer || '未設定'}</span></div>
+                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl"><span class="block text-xs font-medium text-gray-500">スケール</span><span class="font-semibold">${item.scale || '未設定'}</span></div>
+                    </div>
+                </div>
+                ${sellingPriceHtml}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                    <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl"><span class="block text-xs font-medium text-gray-500">予約日</span><span>${item.reservationDate || '未設定'}</span></div>
+                    <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl"><span class="block text-xs font-medium text-gray-500">発売日 / 引渡日</span><span>${item.releaseDate || '未設定'}</span></div>
+                    <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl"><span class="block text-xs font-medium text-gray-500">購入店舗</span><span>${item.shop || '未設定'}</span></div>
+                    <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl"><span class="block text-xs font-medium text-gray-500">注文番号</span><span class="font-mono text-sm">${item.orderNumber || '未設定'}</span></div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl mt-2">
+                    <span class="block text-xs font-medium text-gray-500 mb-1">備考欄</span>
+                    <p class="text-sm whitespace-pre-wrap">${item.notes || 'なし'}</p>
+                </div>
+            `;
+            detailModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            lucide.createIcons();
+        }
+
+        // モーダル・フォーム制御
+        function openAddModal() {
+            form.reset();
+            document.getElementById('doc-id').value = '';
+            modalTitle.innerText = '新しい予約を追加';
+            sellingPriceContainer.classList.add('hidden');
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            document.getElementById('name').focus();
+        }
+
+        function openEditModal(item) {
+            document.getElementById('doc-id').value = item.id;
+            document.getElementById('name').value = item.name || '';
+            document.getElementById('imageUrl').value = item.imageUrl || '';
+            document.getElementById('manufacturer').value = item.manufacturer || '';
+            document.getElementById('scale').value = item.scale || '';
+            document.getElementById('reservationDate').value = item.reservationDate || '';
+            document.getElementById('releaseDate').value = item.releaseDate || '';
+            document.getElementById('shop').value = item.shop || '';
+            document.getElementById('price').value = item.price || 0;
+            document.getElementById('status').value = item.status || '予約済み';
+            document.getElementById('orderNumber').value = item.orderNumber || '';
+            document.getElementById('notes').value = item.notes || '';
+            document.getElementById('sellingPrice').value = item.sellingPrice || 0;
+
+            if (item.status === STATUS_SOLD) sellingPriceContainer.classList.remove('hidden');
+            else sellingPriceContainer.classList.add('hidden');
+
+            modalTitle.innerText = '情報を編集';
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        function openDeleteConfirmation(id, name) {
+            docIdToDelete = id;
+            deleteItemNameEl.innerText = name;
+            deleteModal.classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            deleteModal.classList.add('hidden');
+            docIdToDelete = null;
+        }
+
+        // サイドバー制御
+        function openSidebar(view) {
+            document.body.classList.add('overflow-hidden');
+            if (view === 'reservations') { sidebarReservationsEl.classList.remove('-translate-x-full'); sidebarOverlayReservations.classList.remove('hidden'); }
+            else if (view === 'owned') { sidebarOwnedEl.classList.remove('-translate-x-full'); sidebarOverlayOwned.classList.remove('hidden'); }
+            else if (view === 'sold') { sidebarSoldEl.classList.remove('-translate-x-full'); sidebarOverlaySold.classList.remove('hidden'); }
+        }
+
+        function closeSidebar(view) {
+            document.body.classList.remove('overflow-hidden');
+            if (view === 'reservations') { sidebarReservationsEl.classList.add('-translate-x-full'); sidebarOverlayReservations.classList.add('hidden'); }
+            else if (view === 'owned') { sidebarOwnedEl.classList.add('-translate-x-full'); sidebarOverlayOwned.classList.add('hidden'); }
+            else if (view === 'sold') { sidebarSoldEl.classList.add('-translate-x-full'); sidebarOverlaySold.classList.add('hidden'); }
+        }
+
+        // タブ切替
+        function switchTab(viewName, updateHash = true) {
+            currentView = viewName;
+            [tabReservationsBtn, tabOwnedBtn, tabSoldBtn].forEach(btn => {
+                if(btn) { btn.classList.remove(...ACTIVE_CLASSES); btn.classList.add(...INACTIVE_CLASSES); }
+            });
+            [reservationsPage, ownedPage, soldPage].forEach(page => { if(page) page.classList.add('hidden'); });
+            [openSummaryBtnReservations, openSummaryBtnOwned, openSummaryBtnSold].forEach(btn => { if(btn) btn.classList.add('hidden'); });
+
+            if (viewName === 'reservations') {
+                tabReservationsBtn.classList.remove(...INACTIVE_CLASSES); tabReservationsBtn.classList.add(...ACTIVE_CLASSES);
+                reservationsPage.classList.remove('hidden'); if (openSummaryBtnReservations) openSummaryBtnReservations.classList.remove('hidden');
+            } else if (viewName === 'owned') {
+                tabOwnedBtn.classList.remove(...INACTIVE_CLASSES); tabOwnedBtn.classList.add(...ACTIVE_CLASSES);
+                ownedPage.classList.remove('hidden'); if (openSummaryBtnOwned) openSummaryBtnOwned.classList.remove('hidden');
+            } else if (viewName === 'sold') {
+                tabSoldBtn.classList.remove(...INACTIVE_CLASSES); tabSoldBtn.classList.add(...ACTIVE_CLASSES);
+                soldPage.classList.remove('hidden'); if (openSummaryBtnSold) openSummaryBtnSold.classList.remove('hidden');
+            }
+            if (updateHash) window.location.hash = viewName;
+        }
+
+        // イベントバインド
+        statusSelect.onchange = () => {
+            if (statusSelect.value === STATUS_SOLD) sellingPriceContainer.classList.remove('hidden');
+            else sellingPriceContainer.classList.add('hidden');
+        };
+
+        openModalBtnDesktop.onclick = openAddModal;
+        openModalBtnMobile.onclick = openAddModal;
+        closeModalBtn.onclick = closeModal;
+        modalCloseIcon.onclick = closeModal;
+        cancelDeleteBtn.onclick = closeDeleteModal;
+        closeDetailModalBtn.onclick = () => { detailModal.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); };
+        detailModalCloseIcon.onclick = () => { detailModal.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); };
+
+        window.onclick = (e) => {
+            if (e.target === modal) closeModal();
+            if (e.target === deleteModal) closeDeleteModal();
+            if (e.target === detailModal) { detailModal.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
+        };
+
+        groupBySelect.onchange = () => updateViews();
+        groupBySelectOwned.onchange = () => updateViews();
+        groupBySelectSold.onchange = () => updateViews();
+
+        tabReservationsBtn.onclick = () => switchTab('reservations');
+        tabOwnedBtn.onclick = () => switchTab('owned');
+        tabSoldBtn.onclick = () => switchTab('sold');
+
+        // フォーム保存処理
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const docId = document.getElementById('doc-id').value;
+            const itemData = {
+                name: document.getElementById('name').value,
+                imageUrl: document.getElementById('imageUrl').value,
+                manufacturer: document.getElementById('manufacturer').value,
+                scale: document.getElementById('scale').value,
+                reservationDate: document.getElementById('reservationDate').value,
+                releaseDate: document.getElementById('releaseDate').value,
+                shop: document.getElementById('shop').value,
+                price: Number(document.getElementById('price').value) || 0,
+                status: document.getElementById('status').value,
+                orderNumber: document.getElementById('orderNumber').value,
+                notes: document.getElementById('notes').value,
+                sellingPrice: document.getElementById('status').value === STATUS_SOLD ? (Number(document.getElementById('sellingPrice').value) || 0) : 0,
+                serverUpdatedAt: serverTimestamp()
+            };
+
+            if (!db) {
+                if (docId) {
+                    const idx = reservations.findIndex(r => r.id === docId);
+                    if (idx !== -1) reservations[idx] = { ...reservations[idx], ...itemData, id: docId };
+                } else {
+                    itemData.id = 'mock_' + Date.now();
+                    reservations.unshift(itemData);
+                }
+                closeModal();
+                updateViews();
+                return;
+            }
+
+            try {
+                if (docId) {
+                    await setDoc(doc(db, COLLECTION_NAME, docId), itemData, { merge: true });
+                } else {
+                    itemData.serverCreatedAt = serverTimestamp();
+                    await addDoc(collection(db, COLLECTION_NAME), itemData);
+                }
+                closeModal();
+                if (itemData.status === STATUS_COMPLETED && currentView !== 'owned') switchTab('owned');
+                else if (itemData.status === STATUS_SOLD && currentView !== 'sold') switchTab('sold');
+                else if (itemData.status !== STATUS_COMPLETED && itemData.status !== STATUS_SOLD && currentView !== 'reservations') switchTab('reservations');
+            } catch (error) {
+                console.error("Save Error:", error);
+                alert("データの保存に失敗しました。");
+            }
+        };
+
+        // 削除実行
+        confirmDeleteBtn.onclick = async () => {
+            if (!docIdToDelete) return;
+            if (!db) {
+                reservations = reservations.filter(r => r.id !== docIdToDelete);
+                closeDeleteModal();
+                updateViews();
+                return;
+            }
+            try {
+                await deleteDoc(doc(db, COLLECTION_NAME, docIdToDelete));
+                closeDeleteModal();
+            } catch (error) {
+                console.error("Delete Error:", error);
+            }
+        };
+
+        // ダークモード
+        const isDarkModeSaved = localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDarkModeSaved) { document.body.classList.add('dark'); updateDarkModeIcon(true); }
+        else { document.body.classList.remove('dark'); updateDarkModeIcon(false); }
+
+        toggleDarkModeBtn.onclick = () => {
+            const isDark = document.body.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateDarkModeIcon(isDark);
+        };
+
+        function updateDarkModeIcon(isDark) {
+            const iconEl = toggleDarkModeBtn.querySelector('i');
+            if (iconEl) {
+                iconEl.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+                toggleDarkModeBtn.className = isDark ? "p-3 rounded-full text-amber-400 hover:text-amber-300 transition duration-300 transform hover:scale-110" : "p-3 rounded-full text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition duration-300 transform hover:scale-110";
+                lucide.createIcons();
+            }
+        }
+
+        // サイドバーイベントバインド
+        if (openSummaryBtnReservations) openSummaryBtnReservations.onclick = () => openSidebar('reservations');
+        if (closeSummaryBtnReservations) closeSummaryBtnReservations.onclick = () => closeSidebar('reservations');
+        if (sidebarOverlayReservations) sidebarOverlayReservations.onclick = () => closeSidebar('reservations');
+        if (openSummaryBtnOwned) openSummaryBtnOwned.onclick = () => openSidebar('owned');
+        if (closeSummaryBtnOwned) closeSummaryBtnOwned.onclick = () => closeSidebar('owned');
+        if (sidebarOverlayOwned) sidebarOverlayOwned.onclick = () => closeSidebar('owned');
+        if (openSummaryBtnSold) openSummaryBtnSold.onclick = () => openSidebar('sold');
+        if (closeSummaryBtnSold) closeSummaryBtnSold.onclick = () => closeSidebar('sold');
+        if (sidebarOverlaySold) sidebarOverlaySold.onclick = () => closeSidebar('sold');
+
+        // URL履歴同期
+        const initialView = window.location.hash.substring(1) || 'reservations';
+        switchTab(initialView, false);
+        window.onpopstate = (e) => { switchTab(e.state && e.state.view ? e.state.view : 'reservations', false); };
+
+        initApp();
+        if(!db) updateViews();
+    </script>
+</body>
+</html>
